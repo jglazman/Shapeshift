@@ -6,16 +6,16 @@ AnimatorOverrideController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: MainMenuTransitioner
+  m_Name: LevelTransitioner
   m_Controller: {fileID: 9100000, guid: a70e89645f07e4b958643d9453b5b99b, type: 2}
   m_Clips:
-  - m_OriginalClip: {fileID: 7400000, guid: 225e7ae9e3ae8406681d7500e53b2159, type: 2}
-    m_OverrideClip: {fileID: 7400000, guid: 52afb02abe551443791587bc5e75b3fc, type: 2}
-  - m_OriginalClip: {fileID: 7400000, guid: dabb64c03c8d54be4a7ad686a3a2d0eb, type: 2}
-    m_OverrideClip: {fileID: 7400000, guid: d09b6e75d5da94f66bca458c1fed79c4, type: 2}
   - m_OriginalClip: {fileID: 7400000, guid: a4b5dabf1cc5b4f4f994f092ea560b93, type: 2}
-    m_OverrideClip: {fileID: 7400000, guid: 294c6912114754c51b5997c0c2bab75a, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 45eefc6481e79467999c158680e870a3, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 225e7ae9e3ae8406681d7500e53b2159, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: e3d59267dfaac466c881057e5706802f, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: dabb64c03c8d54be4a7ad686a3a2d0eb, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 45eefc6481e79467999c158680e870a3, type: 2}
   - m_OriginalClip: {fileID: 7400000, guid: fbad573cdddd54e5589a62bbfa566982, type: 2}
-    m_OverrideClip: {fileID: 7400000, guid: 294c6912114754c51b5997c0c2bab75a, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 45eefc6481e79467999c158680e870a3, type: 2}
   - m_OriginalClip: {fileID: 7400000, guid: 2725a38d59f8c490aa5c25333cb2145f, type: 2}
-    m_OverrideClip: {fileID: 7400000, guid: e21ceefe65ae64c4693ff81bc473470f, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 6bad17383f56a483e88eadb536e28acb, type: 2}
