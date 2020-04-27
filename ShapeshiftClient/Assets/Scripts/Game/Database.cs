@@ -60,7 +60,7 @@ namespace Glazman.Shapeshift
 			}
 			catch (System.Exception e)
 			{
-				Debug.LogError($"[{typeof(T)}] Failed to load data with key='{data.Key}': {e.Message}");
+				Logger.LogError($"[{typeof(T)}] Failed to load data with key='{data.Key}': {e.Message}");
 				return null;
 			}
 		}

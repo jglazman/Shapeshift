@@ -28,7 +28,7 @@ namespace Glazman.Shapeshift
 				if (topView != null)
 					topView.Hide();
 				else
-					Debug.LogError("[ViewController] Tried to hide the top view, but the view on the stack was null!");
+					Logger.LogError("Tried to hide the top view, but the view on the stack was null!");
 			}
 			
 			// create the new view
@@ -59,7 +59,7 @@ namespace Glazman.Shapeshift
 				GameObject.Destroy(view.gameObject);
 			}
 			else
-				Debug.LogError("[ViewController] Tried to close the view, but the view on the stack was null!");
+				Logger.LogError("Tried to close the view, but the view on the stack was null!");
 			
 			// remove the top view from the stack
 			_viewStack.RemoveAt(_viewStack.Count - 1);
@@ -71,7 +71,7 @@ namespace Glazman.Shapeshift
 				if (topView != null)
 					topView.Show();
 				else
-					Debug.LogError("[ViewController] Tried to show the top view, but the view on the stack was null!");
+					Logger.LogError("Tried to show the top view, but the view on the stack was null!");
 			}
 		}
 	}

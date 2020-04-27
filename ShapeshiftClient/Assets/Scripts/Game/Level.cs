@@ -49,12 +49,12 @@ namespace Glazman.Shapeshift
 
 		public static void Pause()
 		{
-			Debug.LogWarning("TODO: pause the level");
+			Logger.LogWarningEditor("TODO: pause the level");
 		}
 
 		public static void Unpause()
 		{
-			Debug.LogWarning("TODO: unpause the level");
+			Logger.LogWarningEditor("TODO: unpause the level");
 		}
 	}
 }

@@ -64,7 +64,7 @@ namespace Glazman.Shapeshift
 		{
 			if (nextState == _state)
 			{
-				Debug.LogError($"[Game] Set state to the same state: {_state}");
+				Logger.LogError($"Set state to the same state: {_state}");
 				return;	// nothing to do
 			}
 

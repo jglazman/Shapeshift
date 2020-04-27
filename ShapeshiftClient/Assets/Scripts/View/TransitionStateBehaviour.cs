@@ -16,7 +16,7 @@ namespace Glazman.Shapeshift
 			if (transitioner != null)
 				SceneController.UnregisterTransitioner(transitioner);
 			else
-				Debug.LogError("[TransitionStateBehaviour] Animator is missing a SceneTransitioner");
+				Logger.LogError("Animator is missing a SceneTransitioner");
 		}
 	}
 }

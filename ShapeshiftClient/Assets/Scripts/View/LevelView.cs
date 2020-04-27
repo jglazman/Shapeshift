@@ -31,7 +31,7 @@ namespace Glazman.Shapeshift
 				{
 					int levelIndex = levelEvent.payload.GetInt((int)Level.LoadLevelEvent.Fields.LevelIndex);
 					var config = LevelConfig.Load(levelIndex);
-					Debug.Log($"[LevelView] Load level={levelIndex}, size={config.width}x{config.height}");
+					Logger.LogEditor($"Load level={levelIndex}, size={config.width}x{config.height}");
 				} break;
 
 				case Level.EventType.Win:
