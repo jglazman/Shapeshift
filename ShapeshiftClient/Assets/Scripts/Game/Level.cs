@@ -2,137 +2,15 @@
 // Copyright (c) 2020 Jeremy Glazman
 //
 
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Glazman.Shapeshift
 {
-	public class Payload
+	public static partial class Level
 	{
-		private Dictionary<int, object> items = new Dictionary<int, object>();
-
-		public void SetField(int field, object value)
-		{
-			items[field] = value;
-		}
-
-		public int GetInt(int field)
-		{
-			if (items.TryGetValue(field, out var value))
-				return (int)value;
-
-			return 0;
-		}
-	}
-	
-	
-	public static class Level
-	{
-		public enum EventType
-		{
-			Undefined = 0,
-			LoadLevel,
-			Win,
-			Lose
-		}
-
-		public abstract class Event
-		{
-			public abstract EventType eventType { get; }
-			
-			public readonly Payload payload = new Payload();
-		}
-
-		public class LoadLevelEvent : Event
-		{
-			public enum Fields
-			{
-				Undefined = 0,
-				LevelIndex
-			}
-			
-			public override EventType eventType { get { return EventType.LoadLevel; } }
-
-			public LoadLevelEvent(int levelIndex)
-			{
-				payload.SetField((int)Fields.LevelIndex, levelIndex);
-			}
-		}
-		
-		public class LevelWinEvent : Event
-		{
-			public override EventType eventType { get { return EventType.Win; } }
-		}
-
-		public class LevelLoseEvent : Event
-		{
-			public override EventType eventType { get { return EventType.Lose; } }
-		}
-
-
-		public delegate void LevelEventDelegate(Event levelEvent);
-
-		private static event LevelEventDelegate _eventListeners;
-		
-		public static void ListenForLevelEvents(LevelEventDelegate listener)
-		{
-			_eventListeners += listener;
-		}
-
-		public static void StopListeningForLevelEvents(LevelEventDelegate listener)
-		{
-			_eventListeners -= listener;
-		}
-
-		private static void BroadcastEvent(Event levelEvent)
-		{
-			_eventListeners?.Invoke(levelEvent);
-		}
+		public static LevelState LevelState { get; private set; }
 		
 		
-		
-		public enum CommandType
-		{
-			Undefined = 0,
-			LoadLevel,
-			Debug_Win,
-			Debug_Lose
-		}
-
-		public abstract class Command
-		{
-			public abstract CommandType commandType { get; }
-			
-			public readonly Payload payload = new Payload();
-		}
-
-		public class LoadLevelCommand : Command
-		{
-			public enum Field
-			{
-				Undefined = 0,
-				LevelIndex
-			}
-			
-			public override CommandType commandType { get { return CommandType.LoadLevel; } }
-
-			public LoadLevelCommand(int levelIndex)
-			{
-				payload.SetField((int)Field.LevelIndex, levelIndex);
-			}
-		}
-
-		public class DebugWinCommand : Command
-		{
-			public override CommandType commandType { get { return CommandType.Debug_Win; } }
-		}
-
-		public class DebugLoseCommand : Command
-		{
-			public override CommandType commandType { get { return CommandType.Debug_Lose; } }
-		}
-
 		public static void ExecuteCommand(Command command)
 		{
 			switch (command.commandType)
@@ -167,10 +45,6 @@ namespace Glazman.Shapeshift
 				} break;
 			}
 		}
-
-
-
-		public static LevelState LevelState { get; private set; }
 
 
 		public static void Pause()
