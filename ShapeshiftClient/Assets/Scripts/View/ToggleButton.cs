@@ -9,17 +9,17 @@ namespace Glazman.Shapeshift
 {
 	public class ToggleButton : MonoBehaviour
 	{
-		[SerializeField] private GameOption _gameOption = GameOption.Undefined;
+		[SerializeField] private GameOptionType _gameOption = GameOptionType.Undefined;
 		[SerializeField] private GameObject _toggleOnButton = null;
 		[SerializeField] private GameObject _toggleOffButton = null;
 
 
-		private bool IsToggledOn => GameSettings.GetOption(_gameOption) != 0;
+		private bool IsToggledOn => Database.Load<SettingsData>((int)_gameOption).Value.ToggledOn;
 		
 		
 		private void Awake()
 		{
-			Assert.IsTrue(_gameOption != GameOption.Undefined, $"[ToggleButton] toggle is undefined: {Utilities.GetPathToGameObjectInScene(gameObject)}");
+			Assert.IsTrue(_gameOption != GameOptionType.Undefined, $"[ToggleButton] toggle is undefined: {Utilities.GetPathToGameObjectInScene(gameObject)}");
 			Assert.IsTrue(_toggleOnButton != null && _toggleOffButton != null, $"[ToggleButton] toggle is missing a reference: {Utilities.GetPathToGameObjectInScene(gameObject)}");
 		}
 		
@@ -37,7 +37,10 @@ namespace Glazman.Shapeshift
 		
 		public void OnClick_Toggle()
 		{
-			GameSettings.SetOption(_gameOption, !IsToggledOn);
+			var data = Database.Load<SettingsData>((int)_gameOption);
+			data.Value.ToggledOn = !data.Value.ToggledOn;
+			Database.Save(data);
+			
 			Refresh();
 		}
 	}

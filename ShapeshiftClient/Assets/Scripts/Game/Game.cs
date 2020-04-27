@@ -7,6 +7,7 @@ using UnityEngine.Assertions;
 
 namespace Glazman.Shapeshift
 {
+	// [GameLogger]
 	public static class Game
 	{
 		public enum State
@@ -26,11 +27,11 @@ namespace Glazman.Shapeshift
 			SetState(State.MainMenu, null);
 		}
 
-		public static void Notify(GameMessageType messageType)
+		public static void Notify(GameMessage message)
 		{
-			Assert.IsTrue(messageType != GameMessageType.Undefined, "[Game] Tried to send an undefined message.");
+			Assert.IsTrue(message.GameMessageType != GameMessageType.Undefined, "[Game] Tried to send an undefined message.");
 			
-			switch (messageType)
+			switch (message.GameMessageType)
 			{
 				case GameMessageType.Navigate_RefugeZero:
 				{
@@ -49,7 +50,10 @@ namespace Glazman.Shapeshift
 				
 				case GameMessageType.Navigate_Level:
 				{
-					SetState(State.Level, null);
+					SetState(State.Level, () =>
+					{
+						Level.LoadLevel((message as LoadLevelMessage).levelIndex);
+					});
 				} break;
 			}
 		}

@@ -16,7 +16,7 @@ namespace Glazman.Shapeshift
 		{
 			base.Close();
 			
-			Game.Notify(GameMessageType.Navigate_WorldMap);
+			Game.Notify(new LoadWorldMapMessage());
 		}
 	}
 }

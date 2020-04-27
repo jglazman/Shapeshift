@@ -9,6 +9,30 @@ namespace Glazman.Shapeshift
 	public class LevelView : MonoBehaviour
 	{
 
+		private void Awake()
+		{
+			Level.ListenForLevelEvents(HandleLevelEvent);
+		}
+
+		private void OnDestroy()
+		{
+			Level.StopListeningForLevelEvents(HandleLevelEvent);
+		}
+
+		private void HandleLevelEvent(Level.Event levelEvent)
+		{
+			switch (levelEvent.eventType)
+			{
+				case Level.EventType.Win:
+					PopupViewController.Open<LevelWinPopup>();
+					break;
+				
+				case Level.EventType.Lose:
+					PopupViewController.Open<LevelLosePopup>();
+					break;
+			}
+		}
+
 
 		public void OnClick_Pause()
 		{
@@ -18,13 +42,13 @@ namespace Glazman.Shapeshift
 		public void OnClick_Win()
 		{
 			// TODO: temp debug
-			PopupViewController.Open<LevelWinPopup>();
+			Level.ExecuteCommand(new Level.Command(Level.CommandType.Win));
 		}
 
 		public void OnClick_Lose()
 		{
 			// TODO: temp debug
-			PopupViewController.Open<LevelLosePopup>();
+			Level.ExecuteCommand(new Level.Command(Level.CommandType.Lose));
 		}
 		
 	}

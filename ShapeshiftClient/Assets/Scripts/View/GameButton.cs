@@ -20,7 +20,7 @@ namespace Glazman.Shapeshift
 		
 		public void OnClick_SendMessage()
 		{
-			Game.Notify(_messageType);
+			Game.Notify(new NavigationMessage(_messageType));
 		}
 	}
 }

@@ -11,10 +11,10 @@ namespace Glazman.Shapeshift
 
 
 
-		public void OnClick_PlayLevel()
+		public void OnClick_OpenDebugMenu()
 		{
 			// TODO: temp debug
-			Game.Notify(GameMessageType.Navigate_Level);
+			PopupViewController.Open<WorldMapDebugPopup>();
 		}
 	}
 }
