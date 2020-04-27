@@ -16,9 +16,9 @@ namespace Glazman.Shapeshift
 
 		public abstract class Command
 		{
-			public abstract CommandType commandType { get; }
+			public abstract CommandType CommandType { get; }
 			
-			public readonly Payload payload = new Payload();
+			public readonly Payload Payload = new Payload();
 		}
 
 		public class LoadLevelCommand : Command
@@ -29,22 +29,22 @@ namespace Glazman.Shapeshift
 				LevelIndex
 			}
 			
-			public override CommandType commandType { get { return CommandType.LoadLevel; } }
+			public override CommandType CommandType { get { return CommandType.LoadLevel; } }
 
 			public LoadLevelCommand(int levelIndex)
 			{
-				payload.SetField((int)Field.LevelIndex, levelIndex);
+				Payload.SetField((int)Field.LevelIndex, levelIndex);
 			}
 		}
 
 		public class DebugWinCommand : Command
 		{
-			public override CommandType commandType { get { return CommandType.Debug_Win; } }
+			public override CommandType CommandType { get { return CommandType.Debug_Win; } }
 		}
 
 		public class DebugLoseCommand : Command
 		{
-			public override CommandType commandType { get { return CommandType.Debug_Lose; } }
+			public override CommandType CommandType { get { return CommandType.Debug_Lose; } }
 		}
 	}
 }

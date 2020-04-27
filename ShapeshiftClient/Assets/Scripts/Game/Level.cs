@@ -13,12 +13,12 @@ namespace Glazman.Shapeshift
 		
 		public static void ExecuteCommand(Command command)
 		{
-			switch (command.commandType)
+			switch (command.CommandType)
 			{
 				case CommandType.LoadLevel:
 				{
 					var loadLevelCommand = command as LoadLevelCommand;
-					var levelIndex = loadLevelCommand.payload.GetInt((int)LoadLevelCommand.Field.LevelIndex);
+					var levelIndex = loadLevelCommand.Payload.GetInt((int)LoadLevelCommand.Field.LevelIndex);
 					
 					LevelState = new LevelState(levelIndex);
 					

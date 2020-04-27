@@ -13,9 +13,9 @@ namespace Glazman.Shapeshift
 			PopupViewController.Close();
 		}
 
-		public virtual void Open() { }
+		public virtual void OnOpen() { }
 
-		public virtual void Close() { }
+		public virtual void OnClose() { }
 
 		public virtual void Show()
 		{

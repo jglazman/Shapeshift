@@ -7,8 +7,7 @@ using UnityEngine.Assertions;
 
 namespace Glazman.Shapeshift
 {
-	// [GameLogger]
-	public static class Game
+	public static partial class Game
 	{
 		public enum State
 		{
@@ -27,32 +26,22 @@ namespace Glazman.Shapeshift
 			SetState(State.MainMenu, null);
 		}
 
-		public static void Notify(GameMessage message)
+		public static void Notify(Message message)
 		{
-			Assert.IsTrue(message.GameMessageType != GameMessageType.Undefined, "[Game] Tried to send an undefined message.");
+			Assert.IsTrue(message.MessageType != MessageType.Undefined, "[Game] Tried to send an undefined message.");
 			
-			switch (message.GameMessageType)
+			switch (message.MessageType)
 			{
-				case GameMessageType.Navigate_RefugeZero:
-				{
-					Application.OpenURL("https://www.refugezero.com");
-				} break;
-				
-				case GameMessageType.Navigate_Settings:
-				{
-					PopupViewController.Open<GameSettingsPopup>();
-				} break;
-
-				case GameMessageType.Navigate_WorldMap:
+				case MessageType.GoToWorldMap:
 				{
 					SetState(State.WorldMap, null);
 				} break;
 				
-				case GameMessageType.Navigate_Level:
+				case MessageType.GoToLevel:
 				{
 					SetState(State.Level, () =>
 					{
-						int levelIndex = (message as LoadLevelMessage).levelIndex;
+						int levelIndex = (message as GoToLevelMessage).LevelIndex;
 						Level.ExecuteCommand(new Level.LoadLevelCommand(levelIndex));
 					});
 				} break;
@@ -62,6 +51,8 @@ namespace Glazman.Shapeshift
 
 		private static void SetState(State nextState, System.Action callback)
 		{
+			Logger.LogEditor($"Set state: {_state} -> {nextState}");
+			
 			if (nextState == _state)
 			{
 				Logger.LogError($"Set state to the same state: {_state}");

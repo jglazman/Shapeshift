@@ -1742,10 +1742,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2071283656}
-  - component: {fileID: 2071283660}
   - component: {fileID: 2071283659}
   - component: {fileID: 2071283658}
   - component: {fileID: 2071283657}
+  - component: {fileID: 2071283660}
   m_Layer: 5
   m_Name: Button-Settings
   m_TagString: Untagged
@@ -1813,11 +1813,11 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 2071283660}
-        m_MethodName: OnClick_SendMessage
-        m_Mode: 1
+        m_MethodName: OnClick
+        m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -1870,7 +1870,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cadca4857b9a1405bb209d6b3bb4610a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _messageType: 101
 --- !u!1001 &658231901905138297
 PrefabInstance:
   m_ObjectHideFlags: 0

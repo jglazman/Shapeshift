@@ -25,11 +25,11 @@ namespace Glazman.Shapeshift
 		
 		private void HandleLevelEvent(Level.Event levelEvent)
 		{
-			switch (levelEvent.eventType)
+			switch (levelEvent.EventType)
 			{
 				case Level.EventType.LoadLevel:
 				{
-					int levelIndex = levelEvent.payload.GetInt((int)Level.LoadLevelEvent.Fields.LevelIndex);
+					int levelIndex = levelEvent.Payload.GetInt((int)Level.LoadLevelEvent.Fields.LevelIndex);
 					var config = LevelConfig.Load(levelIndex);
 					Logger.LogEditor($"Load level={levelIndex}, size={config.width}x{config.height}");
 				} break;

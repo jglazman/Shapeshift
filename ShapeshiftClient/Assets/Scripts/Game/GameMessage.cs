@@ -4,53 +4,37 @@
 
 namespace Glazman.Shapeshift
 {
-	// WARNING: these are serialized properties. do not change their values.
-	public enum GameMessageType
+	public static partial class Game
 	{
-		Undefined = 0,
+		// WARNING: these are serialized properties. do not change their values.
+		public enum MessageType
+		{
+			Undefined = 0,
+			GoToWorldMap = 1,
+			GoToLevel = 2
+		}
+
+
+		public abstract class Message
+		{
+			public abstract MessageType MessageType { get; }
+		}
+
+		public class GoToWorldMapMessage : Message
+		{
+			public override MessageType MessageType { get { return MessageType.GoToWorldMap; } }
+		}
 		
-		Navigate_RefugeZero = 100,
-		Navigate_Settings = 101,
-		Navigate_WorldMap = 102,
-		Navigate_Level = 103
-	}
-
-	
-	public abstract class GameMessage
-	{
-		public GameMessageType GameMessageType { get; private set; }
-
-		public GameMessage(GameMessageType messageType)
+		public class GoToLevelMessage : Message
 		{
-			GameMessageType = messageType;
-		}
-	}
+			public override MessageType MessageType { get { return MessageType.GoToLevel; } }
+			
+			public int LevelIndex { get; }
 
-	
-	public class NavigationMessage : GameMessage
-	{
-		public NavigationMessage(GameMessageType messageType) : base(messageType)
-		{
-		}
-	}
-
-	
-	public class LoadWorldMapMessage : GameMessage
-	{
-		public LoadWorldMapMessage() : base(GameMessageType.Navigate_WorldMap)
-		{
-		}
-	}
-
-
-	public class LoadLevelMessage : GameMessage
-	{
-		public int levelIndex { get; }
-		
-
-		public LoadLevelMessage(int levelIndex) : base(GameMessageType.Navigate_Level)
-		{
-			this.levelIndex = levelIndex;
+			public GoToLevelMessage(int levelIndex)
+			{
+				LevelIndex = levelIndex;
+			}
 		}
 	}
 }

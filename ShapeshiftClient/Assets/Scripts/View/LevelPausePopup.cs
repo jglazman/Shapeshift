@@ -12,16 +12,16 @@ namespace Glazman.Shapeshift
 		}
 
 
-		public override void Open()
+		public override void OnOpen()
 		{
-			base.Open();
+			base.OnOpen();
 
 			Level.Pause();
 		}
 
-		public override void Close()
+		public override void OnClose()
 		{
-			base.Close();
+			base.OnClose();
 			
 			Level.Unpause();
 		}

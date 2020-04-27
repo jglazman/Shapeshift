@@ -39,7 +39,7 @@ namespace Glazman.Shapeshift
 			Assert.IsTrue(prefab != null, $"[ViewController] Prefab '{prefabName}' is missing from Resources.");
 			
 			var view = GameObject.Instantiate<T>(prefab);
-			view.Open();
+			view.OnOpen();
 			
 			// add the new view to the stack
 			_viewStack.Add(view);
@@ -55,7 +55,7 @@ namespace Glazman.Shapeshift
 			var view = _viewStack[_viewStack.Count - 1];
 			if (view != null)
 			{
-				view.Close();
+				view.OnClose();
 				GameObject.Destroy(view.gameObject);
 			}
 			else
@@ -73,6 +73,20 @@ namespace Glazman.Shapeshift
 				else
 					Logger.LogError("Tried to show the top view, but the view on the stack was null!");
 			}
+		}
+
+		public static void CloseAll()
+		{
+			for (int i = _viewStack.Count - 1; i >= 0; i--)
+			{
+				if (_viewStack[i] != null)
+				{
+					_viewStack[i].OnClose();
+					GameObject.Destroy(_viewStack[i].gameObject);
+				}
+			}
+			
+			_viewStack.Clear();
 		}
 	}
 }

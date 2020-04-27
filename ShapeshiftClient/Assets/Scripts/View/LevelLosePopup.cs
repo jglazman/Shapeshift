@@ -8,15 +8,7 @@ namespace Glazman.Shapeshift
 	{
 		public void OnClick_Ok()
 		{
-			PopupViewController.Close();
-		}
-
-
-		public override void Close()
-		{
-			base.Close();
-			
-			Game.Notify(new LoadWorldMapMessage());
+			Game.Notify(new Game.GoToWorldMapMessage());
 		}
 	}
 }

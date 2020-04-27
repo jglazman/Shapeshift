@@ -46,7 +46,7 @@ namespace Glazman.Shapeshift
 		
 		public static void RegisterTransitioner(SceneTransitioner transitioner)
 		{
-			Logger.LogEditor($"register: {Utilities.GetPathToGameObjectInScene(transitioner.gameObject)}");
+			// Logger.LogEditor($"register: {Utilities.GetPathToGameObjectInScene(transitioner.gameObject)}");
 
 			Assert.IsTrue(!_activeTransitioners.Contains(transitioner), "[SceneController] Tried to register a SceneTransitioner that was already active.");
 			Assert.IsTrue(!_pendingTransitioners.Contains(transitioner), "[SceneController] Tried to register a SceneTransitioner that was already pending.");
@@ -56,7 +56,7 @@ namespace Glazman.Shapeshift
 
 		public static void UnregisterTransitioner(SceneTransitioner transitioner)
 		{
-			Logger.LogEditor($"unregister: {Utilities.GetPathToGameObjectInScene(transitioner.gameObject)}");
+			// Logger.LogEditor($"unregister: {Utilities.GetPathToGameObjectInScene(transitioner.gameObject)}");
 
 			Assert.IsTrue(!_pendingTransitioners.Contains(transitioner), "[SceneController] Tried to unregister a SceneTransitioner that was still pending.");
 			// Assert.IsTrue(_activeTransitioners.Contains(transitioner), "[SceneController] Tried to unregister a SceneTransitioner that was not active.");
@@ -80,6 +80,9 @@ namespace Glazman.Shapeshift
 			var previousScene = SceneManager.GetActiveScene();
 			
 			Logger.LogEditor($"transition from scene '{previousScene.name}' to '{sceneName}'");
+
+			// close all popups
+			PopupViewController.CloseAll();
 			
 			// play the outro transitions
 			for (int i = 0; i < _activeTransitioners.Count; i++)

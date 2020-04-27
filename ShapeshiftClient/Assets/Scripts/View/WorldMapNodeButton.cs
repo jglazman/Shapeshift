@@ -43,11 +43,11 @@ namespace Glazman.Shapeshift
 			_unlockedButton.SetActive(unlocked);
 		}
 		
-		public void OnClick_Select()
+		public void OnClick()
 		{
 			if (IsUnlocked)
 			{
-				Game.Notify(new LoadLevelMessage(_levelIndex));
+				Game.Notify(new Game.GoToLevelMessage(_levelIndex));
 			}
 			else
 			{

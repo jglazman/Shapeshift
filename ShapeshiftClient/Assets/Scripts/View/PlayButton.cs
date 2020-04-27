@@ -4,9 +4,9 @@
 
 namespace Glazman.Shapeshift
 {
-	public class LevelWinPopup : GenericPopupView
+	public class PlayButton : GenericButton
 	{
-		public void OnClick_Ok()
+		public override void OnClick()
 		{
 			Game.Notify(new Game.GoToWorldMapMessage());
 		}

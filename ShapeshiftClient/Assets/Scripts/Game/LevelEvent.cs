@@ -37,9 +37,9 @@ namespace Glazman.Shapeshift
 
 		public abstract class Event
 		{
-			public abstract EventType eventType { get; }
+			public abstract EventType EventType { get; }
 			
-			public readonly Payload payload = new Payload();
+			public readonly Payload Payload = new Payload();
 		}
 
 		public class LoadLevelEvent : Event
@@ -50,22 +50,22 @@ namespace Glazman.Shapeshift
 				LevelIndex
 			}
 			
-			public override EventType eventType { get { return EventType.LoadLevel; } }
+			public override EventType EventType { get { return EventType.LoadLevel; } }
 
 			public LoadLevelEvent(int levelIndex)
 			{
-				payload.SetField((int)Fields.LevelIndex, levelIndex);
+				Payload.SetField((int)Fields.LevelIndex, levelIndex);
 			}
 		}
 		
 		public class LevelWinEvent : Event
 		{
-			public override EventType eventType { get { return EventType.Win; } }
+			public override EventType EventType { get { return EventType.Win; } }
 		}
 
 		public class LevelLoseEvent : Event
 		{
-			public override EventType eventType { get { return EventType.Lose; } }
+			public override EventType EventType { get { return EventType.Lose; } }
 		}
 	}
 }
