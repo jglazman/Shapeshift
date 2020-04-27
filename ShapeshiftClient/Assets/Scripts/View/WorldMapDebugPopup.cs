@@ -8,7 +8,7 @@ namespace Glazman.Shapeshift
 	{
 		public void OnClick_ResetProgress()
 		{
-			var levelNodes = FindObjectsOfType<LevelNodeButton>();
+			var levelNodes = FindObjectsOfType<WorldMapNodeButton>();
 			foreach (var node in levelNodes)
 			{
 				var levelData = Database.Load<LevelData>(node.LevelIndex);
@@ -24,7 +24,7 @@ namespace Glazman.Shapeshift
 		
 		public void OnClick_UnlockAllLevels()
 		{
-			var levelNodes = FindObjectsOfType<LevelNodeButton>();
+			var levelNodes = FindObjectsOfType<WorldMapNodeButton>();
 			foreach (var node in levelNodes)
 			{
 				var levelData = Database.Load<LevelData>(node.LevelIndex);

@@ -7,7 +7,7 @@ using UnityEngine.Assertions;
 
 namespace Glazman.Shapeshift
 {
-	public class LevelNodeButton : MonoBehaviour
+	public class WorldMapNodeButton : MonoBehaviour
 	{
 		[SerializeField] private int _levelIndex = 0;
 		[SerializeField] private GameObject _lockedButton = null;
@@ -19,8 +19,8 @@ namespace Glazman.Shapeshift
 		
 		private void Awake()
 		{
-			Assert.IsTrue(_levelIndex > 0, $"[LevelNodeButton] level index is undefined: {Utilities.GetPathToGameObjectInScene(gameObject)}");
-			Assert.IsTrue(_lockedButton != null && _unlockedButton != null, $"[ToggleButton] toggle is missing a reference: {Utilities.GetPathToGameObjectInScene(gameObject)}");
+			Assert.IsTrue(_levelIndex > 0, $"[WorldMapNodeButton] level index is undefined: {Utilities.GetPathToGameObjectInScene(gameObject)}");
+			Assert.IsTrue(_lockedButton != null && _unlockedButton != null, $"[WorldMapNodeButton] toggle is missing a reference: {Utilities.GetPathToGameObjectInScene(gameObject)}");
 			
 			// TODO: hack
 			if (_levelIndex == 1)

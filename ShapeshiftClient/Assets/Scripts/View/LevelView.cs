@@ -2,12 +2,15 @@
 // Copyright (c) 2020 Jeremy Glazman
 //
 
+using System;
 using UnityEngine;
 
 namespace Glazman.Shapeshift
 {
 	public class LevelView : MonoBehaviour
 	{
+		[SerializeField] private TileNodeView _tileNodePrefab;
+		
 
 		private void Awake()
 		{
@@ -19,10 +22,18 @@ namespace Glazman.Shapeshift
 			Level.StopListeningForLevelEvents(HandleLevelEvent);
 		}
 
+		
 		private void HandleLevelEvent(Level.Event levelEvent)
 		{
 			switch (levelEvent.eventType)
 			{
+				case Level.EventType.LoadLevel:
+				{
+					int levelIndex = levelEvent.payload.GetInt((int)Level.LoadLevelEvent.Fields.LevelIndex);
+					var config = LevelConfig.Load(levelIndex);
+					Debug.Log($"[LevelView] Load level={levelIndex}, size={config.width}x{config.height}");
+				} break;
+
 				case Level.EventType.Win:
 					PopupViewController.Open<LevelWinPopup>();
 					break;
@@ -39,17 +50,9 @@ namespace Glazman.Shapeshift
 			PopupViewController.Open<LevelPausePopup>();
 		}
 
-		public void OnClick_Win()
+		public void OnClick_OpenDebug()
 		{
-			// TODO: temp debug
-			Level.ExecuteCommand(new Level.Command(Level.CommandType.Win));
+			PopupViewController.Open<LevelDebugPopup>();
 		}
-
-		public void OnClick_Lose()
-		{
-			// TODO: temp debug
-			Level.ExecuteCommand(new Level.Command(Level.CommandType.Lose));
-		}
-		
 	}
 }

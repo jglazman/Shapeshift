@@ -52,7 +52,8 @@ namespace Glazman.Shapeshift
 				{
 					SetState(State.Level, () =>
 					{
-						Level.LoadLevel((message as LoadLevelMessage).levelIndex);
+						int levelIndex = (message as LoadLevelMessage).levelIndex;
+						Level.ExecuteCommand(new Level.LoadLevelCommand(levelIndex));
 					});
 				} break;
 			}

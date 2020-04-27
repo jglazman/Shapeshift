@@ -13,7 +13,6 @@ namespace Glazman.Shapeshift
 
 		public void OnClick_OpenDebugMenu()
 		{
-			// TODO: temp debug
 			PopupViewController.Open<WorldMapDebugPopup>();
 		}
 	}

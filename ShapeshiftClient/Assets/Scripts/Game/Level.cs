@@ -8,25 +8,69 @@ using UnityEngine;
 
 namespace Glazman.Shapeshift
 {
+	public class Payload
+	{
+		private Dictionary<int, object> items = new Dictionary<int, object>();
+
+		public void SetField(int field, object value)
+		{
+			items[field] = value;
+		}
+
+		public int GetInt(int field)
+		{
+			if (items.TryGetValue(field, out var value))
+				return (int)value;
+
+			return 0;
+		}
+	}
+	
+	
 	public static class Level
 	{
 		public enum EventType
 		{
 			Undefined = 0,
+			LoadLevel,
 			Win,
 			Lose
 		}
 
-		public class Event
+		public abstract class Event
 		{
-			public EventType eventType;
+			public abstract EventType eventType { get; }
+			
+			public readonly Payload payload = new Payload();
+		}
 
-			public Event(EventType type)
+		public class LoadLevelEvent : Event
+		{
+			public enum Fields
 			{
-				eventType = type;
+				Undefined = 0,
+				LevelIndex
+			}
+			
+			public override EventType eventType { get { return EventType.LoadLevel; } }
+
+			public LoadLevelEvent(int levelIndex)
+			{
+				payload.SetField((int)Fields.LevelIndex, levelIndex);
 			}
 		}
 		
+		public class LevelWinEvent : Event
+		{
+			public override EventType eventType { get { return EventType.Win; } }
+		}
+
+		public class LevelLoseEvent : Event
+		{
+			public override EventType eventType { get { return EventType.Lose; } }
+		}
+
+
 		public delegate void LevelEventDelegate(Event levelEvent);
 
 		private static event LevelEventDelegate _eventListeners;
@@ -47,53 +91,87 @@ namespace Glazman.Shapeshift
 		}
 		
 		
+		
 		public enum CommandType
 		{
 			Undefined = 0,
-			Win,
-			Lose
+			LoadLevel,
+			Debug_Win,
+			Debug_Lose
 		}
 
-		public class Command
+		public abstract class Command
 		{
-			public CommandType commandType { get; }
+			public abstract CommandType commandType { get; }
+			
+			public readonly Payload payload = new Payload();
+		}
 
-			public Command(CommandType type)
+		public class LoadLevelCommand : Command
+		{
+			public enum Field
 			{
-				commandType = type;
+				Undefined = 0,
+				LevelIndex
 			}
+			
+			public override CommandType commandType { get { return CommandType.LoadLevel; } }
+
+			public LoadLevelCommand(int levelIndex)
+			{
+				payload.SetField((int)Field.LevelIndex, levelIndex);
+			}
+		}
+
+		public class DebugWinCommand : Command
+		{
+			public override CommandType commandType { get { return CommandType.Debug_Win; } }
+		}
+
+		public class DebugLoseCommand : Command
+		{
+			public override CommandType commandType { get { return CommandType.Debug_Lose; } }
 		}
 
 		public static void ExecuteCommand(Command command)
 		{
 			switch (command.commandType)
 			{
-				case CommandType.Win:
+				case CommandType.LoadLevel:
 				{
-					var levelData = Database.Load<LevelData>(_levelIndex);
+					var loadLevelCommand = command as LoadLevelCommand;
+					var levelIndex = loadLevelCommand.payload.GetInt((int)LoadLevelCommand.Field.LevelIndex);
+					
+					LevelState = new LevelState(levelIndex);
+					
+					BroadcastEvent(new LoadLevelEvent(levelIndex));
+				} break;
+				
+				case CommandType.Debug_Win:
+				{
+					var levelData = Database.Load<LevelData>(LevelState.LevelIndex);
 					levelData.Value.stars = 1;
 					levelData.Value.score = 999;
 
 					// TODO: designer control over unlock sequence
-					var nextLevelData = Database.Load<LevelData>(_levelIndex + 1);
+					var nextLevelData = Database.Load<LevelData>(LevelState.LevelIndex + 1);
 					nextLevelData.Value.isUnlocked = true;
 					Database.Save(nextLevelData);
 
-					BroadcastEvent(new Event(EventType.Win));
+					BroadcastEvent(new LevelWinEvent());
 				} break;
 
-				case CommandType.Lose:
+				case CommandType.Debug_Lose:
 				{
-					BroadcastEvent(new Event(EventType.Lose));
+					BroadcastEvent(new LevelLoseEvent());
 				} break;
 			}
 		}
 
-		private static int _levelIndex = 0;
-		public static void LoadLevel(int levelIndex)
-		{
-			_levelIndex = levelIndex;
-		}
+
+
+		public static LevelState LevelState { get; private set; }
+
 
 		public static void Pause()
 		{
