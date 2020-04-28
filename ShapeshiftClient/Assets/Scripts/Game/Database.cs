@@ -21,7 +21,7 @@ namespace Glazman.Shapeshift
 			}
 
 		
-			public static Data<T> CreateData(string ident)
+			public static Data<T> Create(string ident)
 			{
 				return new Data<T>(ident);
 			}
@@ -36,7 +36,7 @@ namespace Glazman.Shapeshift
 
 		public static Data<T> Load<T>(int index) where T: struct
 		{
-			return Load<T>(index.ToString());
+			return LoadInternal<T>(index.ToString());
 		}
 		
 		public static Data<T> Load<T>(string ident) where T: struct
@@ -46,7 +46,7 @@ namespace Glazman.Shapeshift
 
 		private static Data<T> LoadInternal<T>(string ident) where T: struct
 		{
-			var data = Data<T>.CreateData(ident);
+			var data = Data<T>.Create(ident);
 			
 			try
 			{

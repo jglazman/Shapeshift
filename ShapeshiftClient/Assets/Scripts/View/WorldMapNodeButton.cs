@@ -15,20 +15,12 @@ namespace Glazman.Shapeshift
 
 		public int LevelIndex { get { return _levelIndex; } }
 		
-		public bool IsUnlocked => Database.Load<LevelData>(_levelIndex).Value.isUnlocked;
+		public bool IsUnlocked => _levelIndex == 1 || Database.Load<LevelData>(_levelIndex).Value.isUnlocked;
 		
 		private void Awake()
 		{
 			Assert.IsTrue(_levelIndex > 0, $"[WorldMapNodeButton] level index is undefined: {Utilities.GetPathToGameObjectInScene(gameObject)}");
 			Assert.IsTrue(_lockedButton != null && _unlockedButton != null, $"[WorldMapNodeButton] toggle is missing a reference: {Utilities.GetPathToGameObjectInScene(gameObject)}");
-			
-			// TODO: hack
-			if (_levelIndex == 1)
-			{
-				var levelData = Database.Load<LevelData>(_levelIndex);
-				levelData.Value.isUnlocked = true;
-				Database.Save(levelData);
-			}
 		}
 		
 		private void Start()
@@ -51,7 +43,7 @@ namespace Glazman.Shapeshift
 			}
 			else
 			{
-				PopupViewController.Open<LevelLockedPopup>();
+				MessagePopup.ShowMessage("Complete earlier levels to unlock this level.");
 			}
 		}
 	}

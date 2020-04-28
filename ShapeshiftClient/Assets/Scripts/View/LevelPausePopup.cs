@@ -8,7 +8,21 @@ namespace Glazman.Shapeshift
 	{
 		public void OnClick_Ok()
 		{
-			PopupViewController.Close();
+			OnClick_Close();
+		}
+
+		public void OnClick_QuitLevel()
+		{
+			Game.Notify(new Game.GoToWorldMapMessage());
+		}
+
+		public void OnClick_ToggleEditMode()
+		{
+			OnClick_Close();
+
+			var levelView = FindObjectOfType<LevelView>();
+			if (levelView != null)
+				levelView.OnClick_ToggleEditMode();
 		}
 
 

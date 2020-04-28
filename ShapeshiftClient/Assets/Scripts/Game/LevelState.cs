@@ -6,10 +6,10 @@ namespace Glazman.Shapeshift
 {
 	public struct TileState
 	{
-		public int x;
-		public int y;
-		public TileType tileType;
-		public TileItemState tileItemState;
+		public uint x;
+		public uint y;
+		public TileNodeType nodeType;
+		public TileItemState itemState;
 	}
 
 	public class TileItemState
@@ -30,19 +30,19 @@ namespace Glazman.Shapeshift
 		{
 			LevelIndex = levelIndex;
 
-			var config = LevelConfig.Load(levelIndex);
+			var config = Database.Load<LevelConfig>(levelIndex).Value;
 			
 			_tileStates = new TileState[config.width,config.height];
 			
-			for (int y = 0; y < config.height; y++)
-				for (int x = 0; x < config.width; x++)
+			for (uint y = 0; y < config.height; y++)
+				for (uint x = 0; x < config.width; x++)
 				{
 					_tileStates[x, y] = new TileState()
 					{
 						x = x,
 						y = y,
-						tileType = config.layout[x, y],
-						tileItemState = new TileItemState()
+						nodeType = config.GetNodeType(x, y),
+						itemState = new TileItemState()
 					};
 				}
 
