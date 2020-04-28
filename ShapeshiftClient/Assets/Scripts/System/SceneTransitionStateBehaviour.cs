@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Glazman.Shapeshift
 {
-	public class TransitionStateBehaviour : StateMachineBehaviour
+	public class SceneTransitionStateBehaviour : StateMachineBehaviour
 	{
 		public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
 		{
