@@ -23,6 +23,8 @@ namespace Glazman.Shapeshift
 
 		public static void Initialize()
 		{
+			UserInput.Initialize();
+			
 			SetState(State.MainMenu, null);
 		}
 
