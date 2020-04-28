@@ -6,6 +6,19 @@ namespace Glazman.Shapeshift
 {
 	public class LevelPausePopup : GenericPopupView
 	{
+		public override void OnOpen()
+		{
+			base.OnOpen();
+			Level.Pause();
+		}
+
+		public override void OnClose()
+		{
+			base.OnClose();
+			Level.Unpause();
+		}
+		
+		
 		public void OnClick_Ok()
 		{
 			OnClick_Close();
@@ -24,20 +37,10 @@ namespace Glazman.Shapeshift
 			if (levelView != null)
 				levelView.OnClick_ToggleEditMode();
 		}
-
-
-		public override void OnOpen()
+		
+		public void OnClick_DebugMenu()
 		{
-			base.OnOpen();
-
-			Level.Pause();
-		}
-
-		public override void OnClose()
-		{
-			base.OnClose();
-			
-			Level.Unpause();
+			PopupViewController.Open<LevelDebugPopup>();
 		}
 	}
 }

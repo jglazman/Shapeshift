@@ -9,12 +9,16 @@ namespace Glazman.Shapeshift
 {
 	public static class Database
 	{
+		/// <summary>Wrapper for data object persistence.</summary>
+		/// <typeparam name="T">The type of data to be persisted. Only fields that can be serialized by Unity will persist.</typeparam>
 		public sealed class Data<T> where T: struct
 		{
 			public string Key { get; }
 
 			public T Value;
 
+			/// <summary>Wrapper for data object persistence.</summary>
+			/// <param name="ident">A unique identifier for this data object.</param>
 			private Data(string ident)
 			{
 				Key = $"{typeof(T).Name}.{ident}";

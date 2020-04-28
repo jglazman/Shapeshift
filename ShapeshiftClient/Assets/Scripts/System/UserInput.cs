@@ -36,14 +36,9 @@ namespace Glazman.Shapeshift
 			UnityGuiPointerEvent.position = screenPos;
 			UnityEventSystem.RaycastAll(UnityGuiPointerEvent, results);
 
-			if (results.Count > 0)
-			{
-				Logger.LogEditor($"Picked objects:\n{string.Join("\n", results.Select(r => Utilities.GetPathToGameObjectInScene(r.gameObject)))}");
-
-				return results.Select(r => r.gameObject);
-			}
+			// Logger.LogEditor($"Picked objects:\n{string.Join("\n", results.Select(r => Utilities.GetPathToGameObjectInScene(r.gameObject)))}");
 			
-			return null;
+			return results.Select(r => r.gameObject);
 		}
 		
 		public static T PickObject<T>(Vector2 screenPos) where T : UnityEngine.Component

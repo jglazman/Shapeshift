@@ -8,7 +8,7 @@ using UnityEngine.Assertions;
 namespace Glazman.Shapeshift
 {
 	// WARNING: these are serialized properties. do not change their values.
-	public enum TileNodeType
+	public enum GridNodeType
 	{
 		Undefined = 0,
 		Closed = 1,
@@ -20,28 +20,28 @@ namespace Glazman.Shapeshift
 	{
 		public uint width;
 		public uint height;
-		public TileNodeType[] layout;  // Unity can't serialize a multidimensional array, so let's emulate one
+		public GridNodeType[] layout;  // Unity can't serialize a multidimensional array, so let's emulate one
 
 
 		public bool IsInBounds(uint x, uint y)
 		{
-			return (x < width && y < width);
+			return (x < width && y < height);
 		}
 		
-		public TileNodeType TryGetNodeType(uint x, uint y)
+		public GridNodeType TryGetNodeType(uint x, uint y)
 		{
 			if (IsInBounds(x, y)) 
 				return layout[GetLinearIndex(x, y)];
 			
-			return TileNodeType.Undefined;
+			return GridNodeType.Undefined;
 		}
 
-		public TileNodeType GetNodeType(uint x, uint y)
+		public GridNodeType GetNodeType(uint x, uint y)
 		{
 			return layout[GetLinearIndex(x, y)];
 		}
 
-		public void SetNodeType(uint x, uint y, TileNodeType nodeType)
+		public void SetNodeType(uint x, uint y, GridNodeType nodeType)
 		{
 			Assert.IsTrue(IsInBounds(x, y), $"Tried to set out-of-bounds node type: ({x},{y})={nodeType}");
 
@@ -59,25 +59,25 @@ namespace Glazman.Shapeshift
 		}
 		
 
-		public static LevelConfig Debug_CreateDefaultLevel(uint width, uint height)
+		public static LevelConfig EditMode_CreateDefaultLevel(uint width, uint height)
 		{
 			var config = new LevelConfig
 			{
 				width = width,
 				height = height,
-				layout = new TileNodeType[width * height]
+				layout = new GridNodeType[width * height]
 			};
 
 			for (uint y = 0; y < config.height; y++)
 				for (uint x = 0; x < config.width; x++)
-					config.SetNodeType(x, y, TileNodeType.Open);
+					config.SetNodeType(x, y, GridNodeType.Open);
 
 			return config;
 		}
 
-		public static void Debug_ResizeLevel(uint width, uint height, ref LevelConfig config)
+		public static void EditMode_ResizeLevel(uint width, uint height, ref LevelConfig config)
 		{
-			var resizedLayout = new TileNodeType[width * height];
+			var resizedLayout = new GridNodeType[width * height];
 			
 			for (uint y = 0; y < height; y++)
 				for (uint x = 0; x < width; x++)
@@ -85,7 +85,7 @@ namespace Glazman.Shapeshift
 					if (config.IsInBounds(x, y))
 						resizedLayout[GetLinearIndex(x, y, width)] = config.GetNodeType(x, y);
 					else
-						resizedLayout[GetLinearIndex(x, y, width)] = TileNodeType.Open;
+						resizedLayout[GetLinearIndex(x, y, width)] = GridNodeType.Open;
 				}
 
 			config.width = width;

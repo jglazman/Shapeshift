@@ -8,7 +8,7 @@ namespace Glazman.Shapeshift
 	{
 		public uint x;
 		public uint y;
-		public TileNodeType nodeType;
+		public GridNodeType nodeType;
 		public TileItemState itemState;
 	}
 
