@@ -40,8 +40,19 @@ namespace Glazman.Shapeshift
 			UnityEventSystem.RaycastAll(UnityGuiPointerEvent, results);
 
 			// Logger.LogEditor($"Picked objects:\n{string.Join("\n", results.Select(r => Utilities.GetPathToGameObjectInScene(r.gameObject)))}");
+
+			var pickedObjects = new HashSet<GameObject>();
 			
-			return results.Select(r => r.gameObject);
+			foreach (var obj in results)
+			{
+				var hitbox = obj.gameObject.GetComponent<Hitbox>();
+				if (hitbox != null)
+					pickedObjects.Add(hitbox.Target);
+				else
+					pickedObjects.Add(obj.gameObject);
+			}
+
+			return pickedObjects;
 		}
 		
 		/// <summary>Raycast into the world to pick an active interactable MonoBehaviour of the given type.</summary>
