@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,10 +14,13 @@ namespace Glazman.Shapeshift
 	{
 		[SerializeField] private RectTransform _playfieldTransform = null;
 		[SerializeField] private GridNodeView _gridNodePrefab = null;
+		[SerializeField] private GridItemView _gridItemPrefab = null;
+
+		private List<GridNodeView> _gridNodeInstances = new List<GridNodeView>();
+		private List<GridItemView> _gridItemInstances = new List<GridItemView>();
 
 		private Database.Data<LevelConfig> _levelConfig;
-		private List<GridNodeView> _gridNodeInstances = new List<GridNodeView>();
-
+		
 		private bool _isEditMode;
 		private int _levelIndex;
 		private float _tileSize;
@@ -32,10 +36,8 @@ namespace Glazman.Shapeshift
 		private void OnDestroy()
 		{
 			Level.StopListeningForLevelEvents(HandleLevelEvent);
-			
-			GridNodeView.ClearSpriteCache();
+			SpriteResource.ClearCache();
 		}
-
 
 		private void Update()
 		{
@@ -43,34 +45,17 @@ namespace Glazman.Shapeshift
 				HandleEditModeInput();
 		}
 
-		private void HandleEditModeInput()
-		{
-			if (Input.GetKeyDown(KeyCode.Mouse0))
-			{
-				// tap a grid node to cycle its type
-				var gridNode = UserInput.PickObject<GridNodeView>(Input.mousePosition);
-				if (gridNode != null)
-				{
-					int tileType = (int)gridNode.NodeType;
-					
-					// TODO: this only works because we set the GridNodeType values to sequential integers starting at zero
-					tileType++;
-					if (tileType >= Enum.GetValues(typeof(GridNodeType)).Length)
-						tileType = 1; // skip 0=Undefined
-					
-					gridNode.SetNodeType((GridNodeType)tileType);
-				}
-			}
-		}
 		
 		private void HandleLevelEvent(Level.Event levelEvent)
 		{
 			switch (levelEvent.EventType)
 			{
+				// TODO: keep transitioner in loading mode until we receive a LoadLevel event
 				case Level.EventType.LoadLevel:
 				{
-					int index = levelEvent.Payload.GetInt((int)Level.LoadLevelEvent.Fields.LevelIndex);
-					LoadLevel(index);
+					//int levelIndex = levelEvent.Payload.GetInt((int)Level.LoadLevelEvent.Fields.LevelIndex);
+
+					LoadLevel(levelEvent as Level.LoadLevelEvent);
 				} break;
 
 				case Level.EventType.Win:
@@ -84,23 +69,23 @@ namespace Glazman.Shapeshift
 		}
 
 
-		private void LoadLevel(int levelIndex)
+		private void LoadLevel(Level.LoadLevelEvent loadLevelEvent)
 		{
-			_levelIndex = levelIndex;
-			_levelConfig = Database.Load<LevelConfig>(levelIndex);
+			_levelIndex = loadLevelEvent.levelIndex;
+			
+			// TODO: this is kind of a cheat. we *could* receive the config and everything else via the LoadLevelEvent,
+			//       and then we'd be fully server authoritative, but for this prototype it's much easier to directly
+			//       access the static level data that is baked into the application.
+			_levelConfig = Database.Load<LevelConfig>(_levelIndex);
 
 			Logger.LogEditor($"Load level={_levelIndex}, size={_levelConfig.Value.width}x{_levelConfig.Value.height}");
 
-			// clear the playfield (only needed for the level editor)
-			for (int i = 0; i < _gridNodeInstances.Count; i++)
-			{
-				if (_gridNodeInstances[i] != null)
-					Destroy(_gridNodeInstances[i].gameObject);
-			}
-			_gridNodeInstances.Clear();
+			// clear the playfield
+			ClearGridNodeInstances();
+			ClearGridItemInstances();
 
-			// if the config is invalid then auto-open the level editor
-			if (_levelConfig.Value.width == 0 || _levelConfig.Value.height == 0)
+			// if there is no grid state then auto-open the level editor
+			if (loadLevelEvent.gridState == null)
 			{
 				MessagePopup.ShowMessage("This level has no config. Edit mode is enabled.");
 				EnableEditMode();
@@ -118,15 +103,28 @@ namespace Glazman.Shapeshift
 			for (uint y = 0; y < _levelConfig.Value.height; y++)
 				for (uint x = 0; x < _levelConfig.Value.width; x++)
 				{
-					var nodeType = _levelConfig.Value.GetNodeType(x, y);
-					if (nodeType == GridNodeType.Undefined)
+					var nodeLayout = _levelConfig.Value.GetNodeLayout(x, y);
+					if (nodeLayout.nodeType == GridNodeType.Undefined)
 						continue;
 
 					var pos = CalculateGridNodePosition(x, y);
-					var gridNode = Instantiate(_gridNodePrefab, _playfieldTransform);
-					gridNode.Configure(x, y, nodeType, pos, _tileSize);
 					
+					// load the node from the config
+					var gridNode = Instantiate(_gridNodePrefab, _playfieldTransform);
+					gridNode.Configure(x, y, (int)nodeLayout.nodeType, pos, _tileSize);
 					_gridNodeInstances.Add(gridNode);
+
+					// if in edit mode then load the item from the config, else load from the state
+					int itemType = _isEditMode ? 
+						nodeLayout.itemType : 
+						loadLevelEvent.gridState.FirstOrDefault(item => item.x == x && item.y == y)?.itemType ?? -1;
+					
+					if (itemType >= 0)
+					{
+						var gridItem = Instantiate(_gridItemPrefab, _playfieldTransform);
+						gridItem.Configure(x, y, itemType, pos, _tileSize);
+						_gridItemInstances.Add(gridItem);
+					}
 				}
 		}
 
@@ -140,6 +138,30 @@ namespace Glazman.Shapeshift
 			return Mathf.Min(playfieldSize.x / gridSize.x, playfieldSize.y / gridSize.y);
 		}
 
+		private void ClearGridNodeInstances()
+		{
+			for (int i = 0; i < _gridNodeInstances.Count; i++)
+			{
+				if (_gridNodeInstances[i] != null)
+					Destroy(_gridNodeInstances[i].gameObject);
+			}
+			_gridNodeInstances.Clear();
+		}
+
+		private void ClearGridItemInstances()
+		{
+			for (int i = 0; i < _gridItemInstances.Count; i++)
+			{
+				if (_gridItemInstances[i] != null)
+					Destroy(_gridItemInstances[i].gameObject);
+			}
+			_gridItemInstances.Clear();
+		}
+
+		private GridItemView TryGetGridItem(uint x, uint y)
+		{
+			return _gridItemInstances.FirstOrDefault(item => item.X == x && item.Y == y);
+		}
 
 		public void OnClick_Pause()
 		{
@@ -154,10 +176,78 @@ namespace Glazman.Shapeshift
 		[SerializeField] private InputField _debugInputWidth = null;
 		[SerializeField] private InputField _debugInputHeight = null;
 
+		private bool _editModeItemLayer = true;
+
+		private void HandleEditModeInput()
+		{
+			if (Input.GetKeyDown(KeyCode.Mouse0))
+			{
+				if (_editModeItemLayer)
+				{
+					// tap a grid item to cycle its type
+					var gridItem = UserInput.PickObject<GridItemView>(Input.mousePosition);
+					if (gridItem != null)
+					{
+						int itemType = (int)gridItem.Type;
+					
+						// TODO: this only works because we set the GridItemType values to sequential integers starting at zero
+						itemType++;
+						if (itemType >= GridItemView.NumItemTypes)
+							itemType = 0; // loop around to 0=random
+					
+						gridItem.SetType(itemType);
+					}
+				}
+				else
+				{
+					// tap a grid node to cycle its type
+					var gridNode = UserInput.PickObject<GridNodeView>(Input.mousePosition);
+					if (gridNode != null)
+					{
+						int nodeType = (int)gridNode.NodeType;
+					
+						// TODO: this only works because we set the GridNodeType values to sequential integers starting at zero
+						nodeType++;
+						if (nodeType >= GridNodeView.NumNodeTypes)
+							nodeType = 1; // loop around, but skip 0=Undefined
+					
+						gridNode.SetType(nodeType);
+
+						var gridItem = TryGetGridItem(gridNode.X, gridNode.Y);
+						if (gridItem != null)
+						{
+							if (gridNode.NodeType == GridNodeType.Closed)
+								gridItem.SetType(-1);
+							else
+								gridItem.SetType(0);
+						}
+					}
+				}
+			}
+		}
+
+		public void OnClick_EditMode_ToggleLayer()
+		{
+			_editModeItemLayer = !_editModeItemLayer;
+			
+			foreach (var item in _gridItemInstances)
+				item.gameObject.SetActive(_editModeItemLayer && item.ItemType >= 0);
+		}
+
 		public void OnClick_EditMode_Save()
 		{
 			foreach (var gridNode in _gridNodeInstances)
-				_levelConfig.Value.SetNodeType(gridNode.X, gridNode.Y, gridNode.NodeType);
+			{
+				var nodeLayout = _levelConfig.Value.GetNodeLayout(gridNode.X, gridNode.Y);
+				
+				nodeLayout.nodeType = gridNode.NodeType;
+				
+				var gridItem = TryGetGridItem(gridNode.X, gridNode.Y);
+				if (gridItem != null)
+					nodeLayout.itemType = gridItem.ItemType;
+				
+				_levelConfig.Value.SetNodeLayout(gridNode.X, gridNode.Y, nodeLayout);
+			}
 
 			Database.Save(_levelConfig);
 		}
@@ -177,20 +267,23 @@ namespace Glazman.Shapeshift
 			Level.ExecuteCommand(new Level.LoadLevelCommand(_levelIndex));
 		}
 		
-		public void OnClick_ToggleEditMode()
+		public void ToggleEditMode()
 		{
 			_isEditMode = !_isEditMode;
+			
 			if (_isEditMode)
 				EnableEditMode();
 			else
 				DisableEditMode();
+				
+			Level.ExecuteCommand(new Level.LoadLevelCommand(_levelIndex));
 		}
-
 
 		private void EnableEditMode()
 		{
 			_isEditMode = true;
-
+			
+			// init the editor controls
 			_debugInputWidth.text = _levelConfig.Value.width.ToString();
 			_debugInputHeight.text = _levelConfig.Value.height.ToString();
 			_debugPanel.SetActive(true);

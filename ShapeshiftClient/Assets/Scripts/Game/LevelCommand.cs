@@ -9,7 +9,10 @@ namespace Glazman.Shapeshift
 		public enum CommandType
 		{
 			Undefined = 0,
+			
 			LoadLevel,
+			
+			// debug
 			Debug_Win,
 			Debug_Lose
 		}
@@ -23,20 +26,25 @@ namespace Glazman.Shapeshift
 
 		public class LoadLevelCommand : Command
 		{
-			public enum Field
-			{
-				Undefined = 0,
-				LevelIndex
-			}
-			
+			// public enum Field
+			// {
+			// 	Undefined = 0,
+			// 	LevelIndex,
+			// 	GridState
+			// }
+
 			public override CommandType CommandType { get { return CommandType.LoadLevel; } }
+
+			public int levelIndex;
 
 			public LoadLevelCommand(int levelIndex)
 			{
-				Payload.SetField((int)Field.LevelIndex, levelIndex);
+				// Payload.SetField((int)Field.LevelIndex, levelIndex);
+				this.levelIndex = levelIndex;
 			}
 		}
-
+		
+		
 		public class DebugWinCommand : Command
 		{
 			public override CommandType CommandType { get { return CommandType.Debug_Win; } }

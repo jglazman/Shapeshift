@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Jeremy Glazman
 //
 
+using System.Collections.Generic;
+
 namespace Glazman.Shapeshift
 {
 	public static partial class Level
@@ -44,17 +46,24 @@ namespace Glazman.Shapeshift
 
 		public class LoadLevelEvent : Event
 		{
-			public enum Fields
-			{
-				Undefined = 0,
-				LevelIndex
-			}
-			
+			// public enum Fields
+			// {
+			// 	Undefined = 0,
+			// 	LevelIndex
+			// }
+
 			public override EventType EventType { get { return EventType.LoadLevel; } }
 
-			public LoadLevelEvent(int levelIndex)
+			public int levelIndex;
+			public List<GridItemState> gridState;
+
+			public LoadLevelEvent(int levelIndex, List<GridItemState> gridState)
 			{
-				Payload.SetField((int)Fields.LevelIndex, levelIndex);
+				// Payload.SetField((int)Fields.LevelIndex, levelIndex);
+				this.levelIndex = levelIndex;
+				
+				if (gridState != null)
+					this.gridState = new List<GridItemState>(gridState);
 			}
 		}
 		

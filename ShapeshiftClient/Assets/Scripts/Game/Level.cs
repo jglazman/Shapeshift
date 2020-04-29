@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Jeremy Glazman
 //
 
+using UnityEngine.Assertions;
+
 namespace Glazman.Shapeshift
 {
 	public static partial class Level
@@ -16,11 +18,12 @@ namespace Glazman.Shapeshift
 				case CommandType.LoadLevel:
 				{
 					var loadLevelCommand = command as LoadLevelCommand;
-					var levelIndex = loadLevelCommand.Payload.GetInt((int)LoadLevelCommand.Field.LevelIndex);
+					Assert.IsNotNull(loadLevelCommand, "[Level] unexpected command type");
 					
-					LevelState = new LevelState(levelIndex);
+					//var levelIndex = loadLevelCommand.Payload.GetInt((int)LoadLevelCommand.Field.LevelIndex);
 					
-					BroadcastEvent(new LoadLevelEvent(levelIndex));
+					LevelState = new LevelState(loadLevelCommand.levelIndex);
+					BroadcastEvent(new LoadLevelEvent(loadLevelCommand.levelIndex, LevelState.gridState));
 				} break;
 				
 				case CommandType.Debug_Win:

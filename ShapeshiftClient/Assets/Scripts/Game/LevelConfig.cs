@@ -3,6 +3,7 @@
 //
 
 using System;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace Glazman.Shapeshift
@@ -14,13 +15,26 @@ namespace Glazman.Shapeshift
 		Closed = 1,
 		Open = 2
 	}
+
+	/// <summary>
+	/// The initial state of a grid node in the LevelConfig.
+	/// </summary>
+	[Serializable]
+	public struct GridNodeLayout
+	{
+		public GridNodeType nodeType;
+		public int itemType;	// -1 = closed, 0 = random
+	}
 	
+	/// <summary>
+	/// Static level data, everything needed to load a level as designed.
+	/// </summary>
 	[Serializable]
 	public struct LevelConfig
 	{
 		public uint width;
 		public uint height;
-		public GridNodeType[] layout;  // Unity can't serialize a multidimensional array, so let's emulate one
+		public GridNodeLayout[] layout;  // Unity can't serialize a multidimensional array, so let's emulate one
 
 
 		public bool IsInBounds(uint x, uint y)
@@ -28,24 +42,24 @@ namespace Glazman.Shapeshift
 			return (x < width && y < height);
 		}
 		
-		public GridNodeType TryGetNodeType(uint x, uint y)
+		public GridNodeLayout? TryGetNodeLayout(uint x, uint y)
 		{
 			if (IsInBounds(x, y)) 
 				return layout[GetLinearIndex(x, y)];
 			
-			return GridNodeType.Undefined;
+			return null;
 		}
 
-		public GridNodeType GetNodeType(uint x, uint y)
+		public GridNodeLayout GetNodeLayout(uint x, uint y)
 		{
 			return layout[GetLinearIndex(x, y)];
 		}
 
-		public void SetNodeType(uint x, uint y, GridNodeType nodeType)
+		public void SetNodeLayout(uint x, uint y, GridNodeLayout nodeLayout)
 		{
-			Assert.IsTrue(IsInBounds(x, y), $"Tried to set out-of-bounds node type: ({x},{y})={nodeType}");
+			Assert.IsTrue(IsInBounds(x, y), $"Tried to set out-of-bounds node type: ({x},{y})={nodeLayout.nodeType}:{nodeLayout.itemType}");
 
-			layout[GetLinearIndex(x, y)] = nodeType;
+			layout[GetLinearIndex(x, y)] = nodeLayout;
 		}
 
 		private uint GetLinearIndex(uint x, uint y)
@@ -65,27 +79,27 @@ namespace Glazman.Shapeshift
 			{
 				width = width,
 				height = height,
-				layout = new GridNodeType[width * height]
+				layout = new GridNodeLayout[width * height]
 			};
 
 			for (uint y = 0; y < config.height; y++)
 				for (uint x = 0; x < config.width; x++)
-					config.SetNodeType(x, y, GridNodeType.Open);
+					config.SetNodeLayout(x, y, new GridNodeLayout() { nodeType=GridNodeType.Open, itemType=0 });
 
 			return config;
 		}
 
 		public static void EditMode_ResizeLevel(uint width, uint height, ref LevelConfig config)
 		{
-			var resizedLayout = new GridNodeType[width * height];
+			var resizedLayout = new GridNodeLayout[width * height];
 			
 			for (uint y = 0; y < height; y++)
 				for (uint x = 0; x < width; x++)
 				{
 					if (config.IsInBounds(x, y))
-						resizedLayout[GetLinearIndex(x, y, width)] = config.GetNodeType(x, y);
+						resizedLayout[GetLinearIndex(x, y, width)] = config.GetNodeLayout(x, y);
 					else
-						resizedLayout[GetLinearIndex(x, y, width)] = GridNodeType.Open;
+						resizedLayout[GetLinearIndex(x, y, width)] = new GridNodeLayout() { nodeType=GridNodeType.Open, itemType=0 };
 				}
 
 			config.width = width;

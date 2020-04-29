@@ -35,7 +35,7 @@ namespace Glazman.Shapeshift
 
 			var levelView = FindObjectOfType<LevelView>();
 			if (levelView != null)
-				levelView.OnClick_ToggleEditMode();
+				levelView.ToggleEditMode();
 		}
 		
 		public void OnClick_DebugMenu()
