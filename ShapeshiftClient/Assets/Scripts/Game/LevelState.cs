@@ -67,7 +67,7 @@ namespace Glazman.Shapeshift
 			for (int yUp = y + 1; yUp < Height; yUp++)
 			{
 				var nodeUp = Grid[x, yUp];
-				if (nodeUp.itemType > 0)
+				if (nodeUp.nodeType == GridNodeType.Open && nodeUp.itemType > 0)
 					return nodeUp;
 			}
 
@@ -95,8 +95,7 @@ namespace Glazman.Shapeshift
 				if (item.itemType != firstItem.itemType)	// TODO: add wildcard rules
 					return false;	// must select similar items
 				
-				if (Mathf.Abs(item.index.x - previousItem.index.x) > 1 ||
-				    Mathf.Abs(item.index.y - previousItem.index.y) > 1)
+				if (!GridIndex.IsNeighbor(item.index, previousItem.index))
 					return false;	// must select neighbors
 
 				matchedItems.Add(item);
@@ -129,7 +128,7 @@ namespace Glazman.Shapeshift
 							
 					// pull items down to fill the empty nodes
 					var node = Grid[x, y];
-					if (node.itemType <= 0)
+					if (node.nodeType == GridNodeType.Open && node.itemType <= 0)
 					{
 						// find an item above
 						var aboveFilledNode = FindFirstFilledNodeAbove(x, y);

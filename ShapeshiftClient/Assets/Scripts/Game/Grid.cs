@@ -3,6 +3,7 @@
 //
 
 using System;
+using UnityEngine;
 
 namespace Glazman.Shapeshift
 {
@@ -20,6 +21,14 @@ namespace Glazman.Shapeshift
 	{
 		public int x;
 		public int y;
+
+		public static bool IsNeighbor(GridIndex index1, GridIndex index2)
+		{
+			if (Mathf.Abs(index1.x - index2.x) > 1 || Mathf.Abs(index1.y - index2.y) > 1)
+				return false;
+
+			return true;
+		}
 	}
 
 	// [Serializable]

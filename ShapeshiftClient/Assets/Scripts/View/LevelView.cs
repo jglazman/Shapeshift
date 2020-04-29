@@ -80,24 +80,27 @@ namespace Glazman.Shapeshift
 				
 				case State.EditMode:
 				{
+					if (_pendingEvents.Count > 0 && _pendingEvents.Peek().EventType == Level.EventType.LoadLevel)
+						HandlePendingEvents();
+					
 					HandleEditModeInput();
 				} break;
 			}
 		}
 
-		private void SetState(State state)
+		private void SetState(State nextState)
 		{
-			if (state != _state)
-				Logger.LogEditor($"Set state: {_state} -> {state}");
-
 			if (_state == State.EditMode)
 			{
 				// ignore all state changes while in edit mode except for a total reset
-				if (_state != State.Uninitialized)
+				if (nextState != State.Uninitialized)
 					return;
 			}
 			
-			_state = state;
+			if (nextState != _state)
+				Logger.LogEditor($"Set state: {_state} -> {nextState}");
+			
+			_state = nextState;
 		}
 
 		private void SendLevelCommand(Level.Command command)
@@ -124,8 +127,8 @@ namespace Glazman.Shapeshift
 				while (_pendingEvents.Count > 0)
 					HandleLevelEvent(_pendingEvents.Dequeue());
 
-				if (_state == State.ExecutingEvent)
-					SetState(State.WaitingForInput);
+				// TODO: multi-frame handling of events (animations, etc.)
+				SetState(State.WaitingForInput);
 
 				return true;
 			}
@@ -233,25 +236,6 @@ namespace Glazman.Shapeshift
 					gridItem.SetType(-1, true);
 				} break;
 				
-				case Level.EventType.ItemsMatched:
-				{
-					var itemsMatchedEvent = gridEvent as Level.ItemsMatchedEvent;
-					
-					foreach (var destroyedItemEvent in itemsMatchedEvent.MatchedItems)
-						HandleLevelEvent(destroyedItemEvent);
-				} break;
-				
-				case Level.EventType.ItemsFallIntoPlace:
-				{
-					var itemsFallEvent = gridEvent as Level.ItemsFallIntoPlaceEvent;
-					
-					foreach (var movedItemEvent in itemsFallEvent.MovedItems)
-						HandleLevelEvent(movedItemEvent);
-					
-					foreach (var createdItemEvent in itemsFallEvent.CreatedItems)
-						HandleLevelEvent(createdItemEvent);
-				} break;
-				
 				default:
 					Logger.LogError($"Unhandled grid event: {gridEvent.EventType}");
 					break;
@@ -267,13 +251,22 @@ namespace Glazman.Shapeshift
 				if (selectedNode != null && selectedNode.NodeType == GridNodeType.Open)
 				{
 					var gridItem = TryGetGridItem(selectedNode.Index);
-					if (gridItem != null)
+					if (CanSelectGridItem(gridItem))
 					{
-						if (_selectedGridItems.Count == 0 ||
-						    (!_selectedGridItems.Contains(gridItem) && _selectedGridItems[0].ItemType == gridItem.ItemType))
+						// add to the end of the selection
+						gridItem.SetSelected(true);
+						_selectedGridItems.Add(gridItem);
+					}
+					else if (CanDeselectGridItems(gridItem))
+					{
+						// deselect back to the selected node
+						for (int i = _selectedGridItems.Count - 1; i >= 0; i--)
 						{
-							_selectedGridItems.Add(gridItem);
-							gridItem.SetSelected(true);
+							if (_selectedGridItems[i] == gridItem)
+								break;
+							
+							_selectedGridItems[i].SetSelected(false);
+							_selectedGridItems.RemoveAt(i);
 						}
 					}
 				}
@@ -288,6 +281,46 @@ namespace Glazman.Shapeshift
 					SendLevelCommand(new Level.SubmitMatchCommand(selectedItems));
 				}
 			}
+		}
+
+		private bool CanSelectGridItem(GridItemView gridItem)
+		{
+			if (gridItem == null || gridItem.ItemType <= 0)
+				return false;	// invalid
+			
+			if (_selectedGridItems.Count == 0)
+				return true;	// first selection
+
+			if (gridItem.ItemType != _selectedGridItems[0].ItemType)
+				return false;	// TODO: add wildcard rules
+
+			if (_selectedGridItems.Contains(gridItem))
+				return false;	// already selected
+			
+			if (GridIndex.IsNeighbor(gridItem.Index, _selectedGridItems[_selectedGridItems.Count - 1].Index))
+				return true;	// must neighbor the last selected item
+
+			return false;
+		}
+
+		private bool CanDeselectGridItems(GridItemView gridItem)
+		{
+			if (gridItem == null)
+				return false;	// invalid
+			
+			if (_selectedGridItems.Count < 2)
+				return false;	// not enough items selected
+
+			if (!_selectedGridItems.Contains(gridItem))
+				return false;	// not selected
+
+			if (gridItem == _selectedGridItems[_selectedGridItems.Count - 2])
+				return true;	// take one step back
+
+			if (!GridIndex.IsNeighbor(gridItem.Index, _selectedGridItems[_selectedGridItems.Count - 1].Index))
+				return true;	// must NOT neighbor the last selected item to trace back further (else it's annoying)
+			
+			return false;
 		}
 
 
