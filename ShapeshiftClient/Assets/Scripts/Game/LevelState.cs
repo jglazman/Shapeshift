@@ -39,11 +39,9 @@ namespace Glazman.Shapeshift
 		public List<GridItemState> gridState = null;
 
 
-		public LevelState(int levelIndex)
+		public LevelState(int levelIndex, LevelConfig config)
 		{
 			LevelIndex = levelIndex;
-
-			var config = Database.Load<LevelConfig>(levelIndex).Value;
 
 			// TODO: this would normally be an error, but we're exploiting a null gridState to auto-trigger the level editor
 			if (config.width == 0 || config.height == 0)

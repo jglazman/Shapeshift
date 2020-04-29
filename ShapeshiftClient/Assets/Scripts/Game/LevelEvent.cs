@@ -54,13 +54,21 @@ namespace Glazman.Shapeshift
 
 			public override EventType EventType { get { return EventType.LoadLevel; } }
 
-			public int levelIndex;
+			/// <summary>the level that was loaded</summary>
+			public int levelIndex; 
+			
+			/// <summary>the static configuration for the loaded level</summary>
+			public LevelConfig levelConfig; 
+			
+			/// <summary>the initial state of the loaded level</summary>
 			public List<GridItemState> gridState;
-
-			public LoadLevelEvent(int levelIndex, List<GridItemState> gridState)
+			
+			public LoadLevelEvent(int levelIndex, LevelConfig levelConfig, List<GridItemState> gridState)
 			{
 				// Payload.SetField((int)Fields.LevelIndex, levelIndex);
+				
 				this.levelIndex = levelIndex;
+				this.levelConfig = levelConfig;
 				
 				if (gridState != null)
 					this.gridState = new List<GridItemState>(gridState);

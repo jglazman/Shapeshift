@@ -11,7 +11,7 @@ namespace Glazman.Shapeshift
 	{
 		/// <summary>Wrapper for data object persistence.</summary>
 		/// <typeparam name="T">The type of data to be persisted. Only fields that can be serialized by Unity will persist.</typeparam>
-		public sealed class Data<T> where T: struct
+		public sealed class Data<T> where T : struct
 		{
 			public string Key { get; }
 
@@ -21,7 +21,7 @@ namespace Glazman.Shapeshift
 			/// <param name="ident">A unique identifier for this data object.</param>
 			private Data(string ident)
 			{
-				Key = $"{typeof(T).Name}.{ident}";
+				Key = GenerateKey(ident);
 			}
 
 		
@@ -29,36 +29,72 @@ namespace Glazman.Shapeshift
 			{
 				return new Data<T>(ident);
 			}
-		}
-		
-		
-		public static void Save<T>(Data<T> data) where T: struct
-		{
-			PlayerPrefs.SetString(GetPrefsKey(data.Key), Serialize<T>(data.Value));
-			PlayerPrefs.Save();
+
+			public static string GenerateKey(string ident)
+			{
+				return $"{typeof(T).Name}.{ident}";
+			}
 		}
 
-		public static Data<T> Load<T>(int index) where T: struct
+
+		public static bool Exists<T>(string ident) where T : struct
+		{
+			string dataKey = Data<T>.GenerateKey(ident);
+			return PlayerPrefs.HasKey(GetPrefsKey(dataKey));
+		}
+
+		public static void Delete<T>(string ident) where T : struct
+		{
+			string dataKey = Data<T>.GenerateKey(ident);
+			string prefsKey = GetPrefsKey(dataKey);
+			if (PlayerPrefs.HasKey(prefsKey))
+			{
+				Logger.LogWarningEditor($"Delete data '{dataKey}': {PlayerPrefs.GetString(prefsKey)}");
+				PlayerPrefs.DeleteKey(prefsKey);
+				PlayerPrefs.Save();
+			}
+		}
+
+		public static string Save<T>(Data<T> data) where T : struct
+		{
+			string json = Serialize<T>(data.Value);
+			PlayerPrefs.SetString(GetPrefsKey(data.Key), json);
+			PlayerPrefs.Save();
+			return json;
+		}
+
+		public static Data<T> Load<T>(int index) where T : struct
 		{
 			return LoadInternal<T>(index.ToString());
 		}
 		
-		public static Data<T> Load<T>(string ident) where T: struct
+		public static Data<T> Load<T>(string ident) where T : struct
 		{
 			return LoadInternal<T>(ident);
 		}
 
-		private static Data<T> LoadInternal<T>(string ident) where T: struct
+		private static Data<T> LoadInternal<T>(string ident) where T : struct
+		{
+			Assert.IsTrue(!string.IsNullOrEmpty(ident), $"[Database] Tried to load {typeof(T)} data without an identifier.");
+		
+			string dataKey = Data<T>.GenerateKey(ident);
+			string prefsKey = GetPrefsKey(dataKey);
+			string json = PlayerPrefs.GetString(prefsKey);
+			return LoadFromJson<T>(ident, json);
+		}
+
+		private static Data<T> LoadFromJson<T>(string ident, string json) where T : struct
 		{
 			var data = Data<T>.Create(ident);
-			
+
 			try
 			{
+				// Assert.IsTrue(!string.IsNullOrEmpty(json), "[Database] Tried to load a null json");
 				Assert.IsTrue(typeof(T).IsSerializable, $"[Database] Tried to load a non-serializable type={typeof(T)}, guid={data.Key}");
-				
-				var json = PlayerPrefs.GetString(GetPrefsKey(data.Key));
+
 				if (!string.IsNullOrEmpty(json))
 					data.Value = Deserialize<T>(json);
+				// TODO: else load designer default data for this data structure?
 				
 				return data;
 			}

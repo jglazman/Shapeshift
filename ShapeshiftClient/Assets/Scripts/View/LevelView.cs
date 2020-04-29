@@ -19,7 +19,7 @@ namespace Glazman.Shapeshift
 		private List<GridNodeView> _gridNodeInstances = new List<GridNodeView>();
 		private List<GridItemView> _gridItemInstances = new List<GridItemView>();
 
-		private Database.Data<LevelConfig> _levelConfig;
+		private LevelConfig _levelConfig;
 		
 		private bool _isEditMode;
 		private int _levelIndex;
@@ -72,13 +72,9 @@ namespace Glazman.Shapeshift
 		private void LoadLevel(Level.LoadLevelEvent loadLevelEvent)
 		{
 			_levelIndex = loadLevelEvent.levelIndex;
+			_levelConfig = loadLevelEvent.levelConfig;
 			
-			// TODO: this is kind of a cheat. we *could* receive the config and everything else via the LoadLevelEvent,
-			//       and then we'd be fully server authoritative, but for this prototype it's much easier to directly
-			//       access the static level data that is baked into the application.
-			_levelConfig = Database.Load<LevelConfig>(_levelIndex);
-
-			Logger.LogEditor($"Load level={_levelIndex}, size={_levelConfig.Value.width}x{_levelConfig.Value.height}");
+			Logger.LogEditor($"Load level={_levelIndex}, size={_levelConfig.width}x{_levelConfig.height}");
 
 			// clear the playfield
 			ClearGridNodeInstances();
@@ -94,16 +90,16 @@ namespace Glazman.Shapeshift
 
 			// calculate the playfield dimensions
 			Vector3 playfieldSize = _playfieldTransform.sizeDelta;
-			_tileSize = CalculateTileSize(playfieldSize, new Vector2(_levelConfig.Value.width, _levelConfig.Value.height));
+			_tileSize = CalculateTileSize(playfieldSize, new Vector2(_levelConfig.width, _levelConfig.height));
 			_playfieldOrigin = new Vector3(	// [0,0] = lower-left corner
-				(_levelConfig.Value.width - 1) * _tileSize * -0.5f, 
-				(_levelConfig.Value.height - 1) * _tileSize * -0.5f);
+				(_levelConfig.width - 1) * _tileSize * -0.5f, 
+				(_levelConfig.height - 1) * _tileSize * -0.5f);
 			
 			// instantiate the level layout
-			for (uint y = 0; y < _levelConfig.Value.height; y++)
-				for (uint x = 0; x < _levelConfig.Value.width; x++)
+			for (uint y = 0; y < _levelConfig.height; y++)
+				for (uint x = 0; x < _levelConfig.width; x++)
 				{
-					var nodeLayout = _levelConfig.Value.GetNodeLayout(x, y);
+					var nodeLayout = _levelConfig.GetNodeLayout(x, y);
 					if (nodeLayout.nodeType == GridNodeType.Undefined)
 						continue;
 
@@ -238,7 +234,7 @@ namespace Glazman.Shapeshift
 		{
 			foreach (var gridNode in _gridNodeInstances)
 			{
-				var nodeLayout = _levelConfig.Value.GetNodeLayout(gridNode.X, gridNode.Y);
+				var nodeLayout = _levelConfig.GetNodeLayout(gridNode.X, gridNode.Y);
 				
 				nodeLayout.nodeType = gridNode.NodeType;
 				
@@ -246,10 +242,10 @@ namespace Glazman.Shapeshift
 				if (gridItem != null)
 					nodeLayout.itemType = gridItem.ItemType;
 				
-				_levelConfig.Value.SetNodeLayout(gridNode.X, gridNode.Y, nodeLayout);
+				_levelConfig.SetNodeLayout(gridNode.X, gridNode.Y, nodeLayout);
 			}
 
-			Database.Save(_levelConfig);
+			LevelConfig.ExportLevelFile(_levelIndex, _levelConfig);
 		}
 		
 		public void OnClick_EditMode_Resize()
@@ -260,10 +256,10 @@ namespace Glazman.Shapeshift
 			if (!uint.TryParse(_debugInputHeight.text, out var height))
 				return;
 
-			LevelConfig.EditMode_ResizeLevel(width, height, ref _levelConfig.Value);
+			LevelConfig.ResizeLevel(width, height, ref _levelConfig);
+			LevelConfig.ExportLevelFile(_levelIndex, _levelConfig);
 			
-			Database.Save(_levelConfig);
-			
+			// reload the level
 			Level.ExecuteCommand(new Level.LoadLevelCommand(_levelIndex));
 		}
 		
@@ -284,8 +280,8 @@ namespace Glazman.Shapeshift
 			_isEditMode = true;
 			
 			// init the editor controls
-			_debugInputWidth.text = _levelConfig.Value.width.ToString();
-			_debugInputHeight.text = _levelConfig.Value.height.ToString();
+			_debugInputWidth.text = _levelConfig.width.ToString();
+			_debugInputHeight.text = _levelConfig.height.ToString();
 			_debugPanel.SetActive(true);
 		}
 
