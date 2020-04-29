@@ -115,7 +115,7 @@ namespace Glazman.Shapeshift
 						nodeLayout.itemType : 
 						loadLevelEvent.gridState.FirstOrDefault(item => item.x == x && item.y == y)?.itemType ?? -1;
 					
-					if (itemType >= 0)
+					// if (itemType >= 0)	// HACK: load all items, even if they are invalid. this makes the level editor easier to use
 					{
 						var gridItem = Instantiate(_gridItemPrefab, _playfieldTransform);
 						gridItem.Configure(x, y, itemType, pos, _tileSize);

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEditor;
 
@@ -13,7 +14,25 @@ namespace Glazman.Shapeshift
 			PlayerPrefs.DeleteAll();
 			PlayerPrefs.Save();
 			
-			Debug.LogWarning("[Tools] Cleared PlayerPrefs.");
+			Logger.LogWarningEditor("[Tools] Cleared PlayerPrefs.");
 		}
+		
+		[MenuItem("Tools/Clear PersistentDataPath")]
+		public static void ClearPersistentDataPath()
+		{
+			var files = Directory.GetFiles(Application.persistentDataPath);
+
+			foreach (var file in files)
+			{
+				if (file.EndsWith(".txt"))
+				{
+					Logger.LogWarningEditor($"Delete file: {file}");
+					File.Delete(file);
+				}
+			}
+			
+			Logger.LogWarningEditor("[Tools] Cleared PersistentDataPath.");
+		}
+
 	}
 }

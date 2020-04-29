@@ -227,18 +227,24 @@ namespace Glazman.Shapeshift
 		public static void ExportLevelFile(int levelIndex, LevelConfig config)
 		{
 			string resourceName = GetLevelResourceName(levelIndex);
+			
+#if UNITY_EDITOR
+			// the editor exports to Resources
+			string pathToAsset = Path.Combine("Data", "Resources", $"{resourceName}.txt");
+			string pathToFile = Path.Combine(Application.dataPath, pathToAsset);
+#else
+			// device exports to persistent data, so the file can be retrieved later and imported into the Unity project
 			string pathToFile = Path.Combine(Application.persistentDataPath, $"{resourceName}.txt");
+#endif
 			
 			try
 			{
 				string json = JsonUtility.ToJson(config);
-			
 				Logger.LogEditor($"[EXPORT] Level={levelIndex}, Data={json}");	// adb logcat, copy and paste ;)
 				
 				using (var writer = new StreamWriter(pathToFile))
 				{
 					writer.Write(json);
-					
 					Logger.LogEditor($"[EXPORT] Level '{resourceName}' was exported to file: {pathToFile}");
 				}
 			}
@@ -246,6 +252,11 @@ namespace Glazman.Shapeshift
 			{
 				Logger.LogError($"Error while exporting '{resourceName}' to PersistentDataPath '{pathToFile}': {e.Message}");
 			}
+			
+#if UNITY_EDITOR
+			// reimport, else the imported asset is stale
+			UnityEditor.AssetDatabase.ImportAsset(Path.Combine("Assets", pathToAsset));
+#endif
 		}
 
 	}
