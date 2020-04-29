@@ -6,22 +6,37 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.UI;
 
 namespace Glazman.Shapeshift
 {
 	public class LevelView : MonoBehaviour
 	{
+		public enum State
+		{
+			Uninitialized = 0,
+			
+			// game
+			WaitingForInput,
+			WaitingForResponse,
+			ExecutingEvent,
+			
+			// level editor
+			EditMode
+		}
+		
+		private State _state = State.Uninitialized;
+
 		[SerializeField] private RectTransform _playfieldTransform = null;
 		[SerializeField] private GridNodeView _gridNodePrefab = null;
 		[SerializeField] private GridItemView _gridItemPrefab = null;
 
+		private Queue<Level.Event> _pendingEvents = new Queue<Level.Event>();
 		private List<GridNodeView> _gridNodeInstances = new List<GridNodeView>();
 		private List<GridItemView> _gridItemInstances = new List<GridItemView>();
-
+		private List<GridItemView> _selectedGridItems = new List<GridItemView>();
 		private LevelConfig _levelConfig;
-		
-		private bool _isEditMode;
 		private int _levelIndex;
 		private float _tileSize;
 		private Vector3 _playfieldOrigin; // [0,0] = lower-left corner
@@ -29,50 +44,257 @@ namespace Glazman.Shapeshift
 
 		private void Awake()
 		{
-			Level.ListenForLevelEvents(HandleLevelEvent);
+			Level.ListenForLevelEvents(ReceiveLevelEvent);
 			DisableEditMode();
 		}
 
 		private void OnDestroy()
 		{
-			Level.StopListeningForLevelEvents(HandleLevelEvent);
+			Level.StopListeningForLevelEvents(ReceiveLevelEvent);
 			SpriteResource.ClearCache();
 		}
 
 		private void Update()
 		{
-			if (_isEditMode)
-				HandleEditModeInput();
+			switch (_state)
+			{
+				case State.Uninitialized:
+				case State.WaitingForResponse:
+				{
+					HandlePendingEvents();
+				} break;
+				
+				case State.WaitingForInput:
+				{
+					// allow events to interrupt input from the player
+					if (!HandlePendingEvents())
+					{
+						HandleInput();
+					}
+				} break;
+
+				case State.ExecutingEvent:
+				{
+					// idle
+				} break;
+				
+				case State.EditMode:
+				{
+					HandleEditModeInput();
+				} break;
+			}
 		}
 
+		private void SetState(State state)
+		{
+			if (state != _state)
+				Logger.LogEditor($"Set state: {_state} -> {state}");
+
+			if (_state == State.EditMode)
+			{
+				// ignore all state changes while in edit mode except for a total reset
+				if (_state != State.Uninitialized)
+					return;
+			}
+			
+			_state = state;
+		}
+
+		private void SendLevelCommand(Level.Command command)
+		{
+			Logger.LogWarningEditor($"Send level command: {command.CommandType}");
+		
+			SetState(State.WaitingForResponse);
+			
+			Level.ExecuteCommand(command);
+		}
+		
+		
+		private void ReceiveLevelEvent(Level.Event levelEvent)
+		{
+			_pendingEvents.Enqueue(levelEvent);
+		}
+
+		private bool HandlePendingEvents()
+		{
+			if (_pendingEvents.Count > 0)
+			{
+				SetState(State.ExecutingEvent);
+				
+				while (_pendingEvents.Count > 0)
+					HandleLevelEvent(_pendingEvents.Dequeue());
+
+				if (_state == State.ExecutingEvent)
+					SetState(State.WaitingForInput);
+
+				return true;
+			}
+
+			return false;
+		}
 		
 		private void HandleLevelEvent(Level.Event levelEvent)
 		{
+			Logger.LogWarningEditor($"Handle level event: {levelEvent.EventType}");
+
 			switch (levelEvent.EventType)
 			{
 				// TODO: keep transitioner in loading mode until we receive a LoadLevel event
 				case Level.EventType.LoadLevel:
 				{
-					//int levelIndex = levelEvent.Payload.GetInt((int)Level.LoadLevelEvent.Fields.LevelIndex);
-
 					LoadLevel(levelEvent as Level.LoadLevelEvent);
 				} break;
 
 				case Level.EventType.Win:
+				{
 					PopupViewController.Open<LevelWinPopup>();
-					break;
-				
+				} break;
+
 				case Level.EventType.Lose:
+				{
 					PopupViewController.Open<LevelLosePopup>();
+				} break;
+				
+				case Level.EventType.MatchSuccess:
+				{
+					DeselectAllGridItems();
+				} break;
+
+				case Level.EventType.MatchRejected:
+				{
+					DeselectAllGridItems();
+				} break;
+
+				case Level.EventType.ItemsMatched:
+				{
+					var itemsMatchedEvent = levelEvent as Level.ItemsMatchedEvent;
+					
+					foreach (var destroyedItemEvent in itemsMatchedEvent.MatchedItems)
+						HandleGridEvent(destroyedItemEvent);
+				} break;
+				
+				case Level.EventType.ItemsFallIntoPlace:
+				{
+					var itemsFallEvent = levelEvent as Level.ItemsFallIntoPlaceEvent;
+					
+					foreach (var movedItemEvent in itemsFallEvent.MovedItems)
+						HandleGridEvent(movedItemEvent);
+					
+					foreach (var createdItemEvent in itemsFallEvent.CreatedItems)
+						HandleGridEvent(createdItemEvent);
+				} break;
+				
+				default:
+					Logger.LogError($"Unhandled level event: {levelEvent.EventType}");
 					break;
+			}
+		}
+
+		// TODO: these 'sub-events' are handled separately to avoid recursion. these event types could be subclassed instead, or handled some other way.
+		private void HandleGridEvent(Level.Event gridEvent)
+		{
+			switch (gridEvent.EventType)
+			{
+				case Level.EventType.ItemCreated:
+				{
+					var itemCreatedEvent = gridEvent as Level.ItemCreatedEvent;
+					
+					var gridItem = TryGetGridItem(itemCreatedEvent.Index);
+					Assert.IsNotNull(gridItem);
+					Assert.IsTrue(gridItem.ItemType == -1);
+					
+					gridItem.SetType(itemCreatedEvent.ItemType, true);
+				} break;
+
+				case Level.EventType.ItemMoved:
+				{
+					var itemMovedEvent = gridEvent as Level.ItemMovedEvent;
+					
+					var sourceItem = TryGetGridItem(itemMovedEvent.SourceIndex);
+					Assert.IsNotNull(sourceItem);
+					Assert.IsTrue(sourceItem.ItemType == itemMovedEvent.ItemType);
+					
+					var destItem = TryGetGridItem(itemMovedEvent.DestIndex);
+					Assert.IsNotNull(destItem);
+					Assert.IsTrue(destItem.ItemType == -1);
+					
+					sourceItem.SetType(-1);
+					destItem.SetType(itemMovedEvent.ItemType, true);
+				} break;
+				
+				case Level.EventType.ItemDestroyed:
+				{
+					var itemDestroyedEvent = gridEvent as Level.ItemDestroyedEvent;
+					
+					var gridItem = TryGetGridItem(itemDestroyedEvent.Index);
+					Assert.IsNotNull(gridItem);
+					Assert.IsTrue(gridItem.ItemType > 0);
+					
+					gridItem.SetType(-1, true);
+				} break;
+				
+				case Level.EventType.ItemsMatched:
+				{
+					var itemsMatchedEvent = gridEvent as Level.ItemsMatchedEvent;
+					
+					foreach (var destroyedItemEvent in itemsMatchedEvent.MatchedItems)
+						HandleLevelEvent(destroyedItemEvent);
+				} break;
+				
+				case Level.EventType.ItemsFallIntoPlace:
+				{
+					var itemsFallEvent = gridEvent as Level.ItemsFallIntoPlaceEvent;
+					
+					foreach (var movedItemEvent in itemsFallEvent.MovedItems)
+						HandleLevelEvent(movedItemEvent);
+					
+					foreach (var createdItemEvent in itemsFallEvent.CreatedItems)
+						HandleLevelEvent(createdItemEvent);
+				} break;
+				
+				default:
+					Logger.LogError($"Unhandled grid event: {gridEvent.EventType}");
+					break;
+			}
+		}
+
+		private void HandleInput()
+		{
+			if (Input.GetKey(KeyCode.Mouse0))
+			{
+				// select via the node because it is static in the scene. items might be falling into place.
+				var selectedNode = UserInput.PickObject<GridNodeView>(Input.mousePosition);
+				if (selectedNode != null && selectedNode.NodeType == GridNodeType.Open)
+				{
+					var gridItem = TryGetGridItem(selectedNode.Index);
+					if (gridItem != null)
+					{
+						if (_selectedGridItems.Count == 0 ||
+						    (!_selectedGridItems.Contains(gridItem) && _selectedGridItems[0].ItemType == gridItem.ItemType))
+						{
+							_selectedGridItems.Add(gridItem);
+							gridItem.SetSelected(true);
+						}
+					}
+				}
+			}
+
+			if (Input.GetKeyUp(KeyCode.Mouse0))
+			{
+				// submit
+				if (_selectedGridItems.Count > 0)
+				{
+					var selectedItems = _selectedGridItems.Select(item => item.Index);
+					SendLevelCommand(new Level.SubmitMatchCommand(selectedItems));
+				}
 			}
 		}
 
 
 		private void LoadLevel(Level.LoadLevelEvent loadLevelEvent)
 		{
-			_levelIndex = loadLevelEvent.levelIndex;
-			_levelConfig = loadLevelEvent.levelConfig;
+			_levelIndex = loadLevelEvent.LevelIndex;
+			_levelConfig = loadLevelEvent.LevelConfig;
 			
 			Logger.LogEditor($"Load level={_levelIndex}, size={_levelConfig.width}x{_levelConfig.height}");
 
@@ -81,9 +303,9 @@ namespace Glazman.Shapeshift
 			ClearGridItemInstances();
 
 			// if there is no grid state then auto-open the level editor
-			if (loadLevelEvent.gridState == null)
+			if (loadLevelEvent.InitialGridState == null)
 			{
-				MessagePopup.ShowMessage("This level has no config. Edit mode is enabled.");
+				MessagePopup.ShowMessage("This level is invalid. Edit mode is enabled.");
 				EnableEditMode();
 				return;
 			}
@@ -96,8 +318,8 @@ namespace Glazman.Shapeshift
 				(_levelConfig.height - 1) * _tileSize * -0.5f);
 			
 			// instantiate the level layout
-			for (uint y = 0; y < _levelConfig.height; y++)
-				for (uint x = 0; x < _levelConfig.width; x++)
+			for (int y = 0; y < _levelConfig.height; y++)
+				for (int x = 0; x < _levelConfig.width; x++)
 				{
 					var nodeLayout = _levelConfig.GetNodeLayout(x, y);
 					if (nodeLayout.nodeType == GridNodeType.Undefined)
@@ -111,9 +333,9 @@ namespace Glazman.Shapeshift
 					_gridNodeInstances.Add(gridNode);
 
 					// if in edit mode then load the item from the config, else load from the state
-					int itemType = _isEditMode ? 
+					int itemType = _state == State.EditMode ? 
 						nodeLayout.itemType : 
-						loadLevelEvent.gridState.FirstOrDefault(item => item.x == x && item.y == y)?.itemType ?? -1;
+						loadLevelEvent.InitialGridState.FirstOrDefault(item => item.index.x == x && item.index.y == y)?.itemType ?? -1;
 					
 					// if (itemType >= 0)	// HACK: load all items, even if they are invalid. this makes the level editor easier to use
 					{
@@ -124,7 +346,7 @@ namespace Glazman.Shapeshift
 				}
 		}
 
-		private Vector3 CalculateGridNodePosition(uint x, uint y)
+		private Vector3 CalculateGridNodePosition(int x, int y)
 		{
 			return new Vector3(_playfieldOrigin.x + (x * _tileSize), _playfieldOrigin.y + (y * _tileSize));
 		}
@@ -153,10 +375,26 @@ namespace Glazman.Shapeshift
 			}
 			_gridItemInstances.Clear();
 		}
-
-		private GridItemView TryGetGridItem(uint x, uint y)
+		
+		private void DeselectAllGridItems()
 		{
-			return _gridItemInstances.FirstOrDefault(item => item.X == x && item.Y == y);
+			if (_selectedGridItems.Count > 0)
+			{
+				foreach (var item in _selectedGridItems)
+					item.SetSelected(false);
+
+				_selectedGridItems.Clear();
+			}
+		}
+
+		private GridItemView TryGetGridItem(GridIndex index)
+		{
+			return _gridItemInstances.FirstOrDefault(item => item.Index.x == index.x && item.Index.y == index.y);
+		}
+
+		private GridItemView TryGetGridItem(int x, int y)
+		{
+			return _gridItemInstances.FirstOrDefault(item => item.Index.x == x && item.Index.y == y);
 		}
 
 		public void OnClick_Pause()
@@ -209,7 +447,7 @@ namespace Glazman.Shapeshift
 					
 						gridNode.SetType(nodeType);
 
-						var gridItem = TryGetGridItem(gridNode.X, gridNode.Y);
+						var gridItem = TryGetGridItem(gridNode.Index);
 						if (gridItem != null)
 						{
 							if (gridNode.NodeType == GridNodeType.Closed)
@@ -234,15 +472,15 @@ namespace Glazman.Shapeshift
 		{
 			foreach (var gridNode in _gridNodeInstances)
 			{
-				var nodeLayout = _levelConfig.GetNodeLayout(gridNode.X, gridNode.Y);
+				var nodeLayout = _levelConfig.GetNodeLayout(gridNode.Index);
 				
 				nodeLayout.nodeType = gridNode.NodeType;
 				
-				var gridItem = TryGetGridItem(gridNode.X, gridNode.Y);
+				var gridItem = TryGetGridItem(gridNode.Index);
 				if (gridItem != null)
 					nodeLayout.itemType = gridItem.ItemType;
 				
-				_levelConfig.SetNodeLayout(gridNode.X, gridNode.Y, nodeLayout);
+				_levelConfig.SetNodeLayout(gridNode.Index, nodeLayout);
 			}
 
 			LevelConfig.ExportLevelFile(_levelIndex, _levelConfig);
@@ -250,10 +488,10 @@ namespace Glazman.Shapeshift
 		
 		public void OnClick_EditMode_Resize()
 		{
-			if (!uint.TryParse(_debugInputWidth.text, out var width))
+			if (!int.TryParse(_debugInputWidth.text, out var width))
 				return;
 			
-			if (!uint.TryParse(_debugInputHeight.text, out var height))
+			if (!int.TryParse(_debugInputHeight.text, out var height))
 				return;
 
 			LevelConfig.ResizeLevel(width, height, ref _levelConfig);
@@ -265,19 +503,18 @@ namespace Glazman.Shapeshift
 		
 		public void ToggleEditMode()
 		{
-			_isEditMode = !_isEditMode;
-			
-			if (_isEditMode)
-				EnableEditMode();
-			else
+			if (_state == State.EditMode)
 				DisableEditMode();
+			else
+				EnableEditMode();
 				
+			// reload the level, so we can initialize in the proper mode
 			Level.ExecuteCommand(new Level.LoadLevelCommand(_levelIndex));
 		}
 
 		private void EnableEditMode()
 		{
-			_isEditMode = true;
+			SetState(State.EditMode);
 			
 			// init the editor controls
 			_debugInputWidth.text = _levelConfig.width.ToString();
@@ -287,7 +524,9 @@ namespace Glazman.Shapeshift
 
 		private void DisableEditMode()
 		{
-			_isEditMode = false;
+			SetState(State.Uninitialized);
+			
+			// hide the controls
 			_debugPanel.SetActive(false);
 		}
 		////////////////////////////////////////////////

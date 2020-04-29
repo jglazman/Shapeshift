@@ -9,23 +9,26 @@ namespace Glazman.Shapeshift
 {
 	public abstract class GridBaseView : MonoBehaviour
 	{
+		protected abstract string GetSpriteResourceName();
+
 		[SerializeField] private RectTransform _rectTransform = null;
 		[SerializeField] private Image _image = null;
+		[SerializeField] private GameObject _rootSelected;
 
-		public uint X { get; private set; }
-		public uint Y { get; private set; }
+		public GridIndex Index { get; private set; }
 		public int Type { get; private set; }
+		public bool IsSelected { get; private set; }
 
-		public void Configure(uint x, uint y, int type, Vector3 position, float size)
+		public void Configure(int x, int y, int type, Vector3 position, float size)
 		{
-			X = x;
-			Y = y;
+			Index = new GridIndex() { x = x,  y = y };
 			SetType(type);
 			SetPosition(position);
 			SetSize(size);
+			SetSelected(false);
 		}
 		
-		public void SetType(int type)
+		public void SetType(int type, bool andEnable=false)
 		{
 			Type = type;
 
@@ -33,7 +36,9 @@ namespace Glazman.Shapeshift
 			{
 				string spriteName = GetSpriteResourceName();
 				_image.sprite = SpriteResource.GetSprite(spriteName);
-				// gameObject.SetActive(true);	// if we are turned off, then something else has to turn us back on. we can't make that decision.
+				
+				if (andEnable)	// if we are turned off, then something else has to turn us back on. we can't make that decision.
+					gameObject.SetActive(true);
 			}
 			else
 			{
@@ -51,7 +56,13 @@ namespace Glazman.Shapeshift
 		{
 			_rectTransform.sizeDelta = new Vector2(size, size);
 		}
-
-		protected abstract string GetSpriteResourceName();
+		
+		public void SetSelected(bool isSelected)
+		{
+			IsSelected = isSelected;
+			
+			if (_rootSelected != null)
+				_rootSelected.SetActive(isSelected);
+		}
 	}
 }

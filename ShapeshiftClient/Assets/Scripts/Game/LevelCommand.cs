@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Jeremy Glazman
 //
 
+using System.Collections.Generic;
+
 namespace Glazman.Shapeshift
 {
 	public static partial class Level
@@ -11,6 +13,7 @@ namespace Glazman.Shapeshift
 			Undefined = 0,
 			
 			LoadLevel,
+			SubmitMatch,
 			
 			// debug
 			Debug_Win,
@@ -35,12 +38,24 @@ namespace Glazman.Shapeshift
 
 			public override CommandType CommandType { get { return CommandType.LoadLevel; } }
 
-			public int levelIndex;
+			public int LevelIndex { get; }
 
 			public LoadLevelCommand(int levelIndex)
 			{
 				// Payload.SetField((int)Field.LevelIndex, levelIndex);
-				this.levelIndex = levelIndex;
+				LevelIndex = levelIndex;
+			}
+		}
+
+		public class SubmitMatchCommand : Command
+		{
+			public override CommandType CommandType { get { return CommandType.SubmitMatch; } }
+
+			public List<GridIndex> SelectedItems { get; }
+
+			public SubmitMatchCommand(IEnumerable<GridIndex> selectedItems)
+			{
+				SelectedItems = new List<GridIndex>(selectedItems);
 			}
 		}
 		

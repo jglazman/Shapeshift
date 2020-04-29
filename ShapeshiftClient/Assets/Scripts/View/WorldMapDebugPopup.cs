@@ -11,7 +11,7 @@ namespace Glazman.Shapeshift
 			var levelNodes = FindObjectsOfType<WorldMapNodeButton>();
 			foreach (var node in levelNodes)
 			{
-				var levelData = Database.Load<LevelData>(node.LevelIndex);
+				var levelData = Database.Load<LevelProgressData>(node.LevelIndex);
 				levelData.Value = default;
 				levelData.Value.isUnlocked = node.LevelIndex == 1;
 				Database.Save(levelData);
@@ -27,7 +27,7 @@ namespace Glazman.Shapeshift
 			var levelNodes = FindObjectsOfType<WorldMapNodeButton>();
 			foreach (var node in levelNodes)
 			{
-				var levelData = Database.Load<LevelData>(node.LevelIndex);
+				var levelData = Database.Load<LevelProgressData>(node.LevelIndex);
 				levelData.Value.isUnlocked = true;
 				Database.Save(levelData);
 				

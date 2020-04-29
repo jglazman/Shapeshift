@@ -15,7 +15,7 @@ namespace Glazman.Shapeshift
 
 		public int LevelIndex { get { return _levelIndex; } }
 		
-		public bool IsUnlocked => _levelIndex == 1 || Database.Load<LevelData>(_levelIndex).Value.isUnlocked;
+		public bool IsUnlocked => _levelIndex == 1 || Database.Load<LevelProgressData>(_levelIndex).Value.isUnlocked;
 		
 		private void Awake()
 		{

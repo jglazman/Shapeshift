@@ -11,41 +11,23 @@ using UnityEngine.Networking;
 
 namespace Glazman.Shapeshift
 {
-	// WARNING: these are serialized properties. do not change their values.
-	public enum GridNodeType
-	{
-		Undefined = 0,
-		Closed = 1,
-		Open = 2
-	}
-
-	/// <summary>
-	/// The initial state of a grid node in the LevelConfig.
-	/// </summary>
-	[Serializable]
-	public struct GridNodeLayout
-	{
-		public GridNodeType nodeType;
-		public int itemType;	// -1 = closed, 0 = random
-	}
-	
 	/// <summary>
 	/// Static level data, everything needed to load a level as designed.
 	/// </summary>
 	[Serializable]
 	public class LevelConfig
 	{
-		public uint width;
-		public uint height;
+		public int width;
+		public int height;
 		public GridNodeLayout[] layout;  // Unity can't serialize a multidimensional array, so let's emulate one
 
 
-		public bool IsInBounds(uint x, uint y)
+		public bool IsInBounds(int x, int y)
 		{
-			return (x < width && y < height);
+			return (x >= 0 && x < width && y >= 0 && y < height);
 		}
 		
-		public GridNodeLayout? TryGetNodeLayout(uint x, uint y)
+		public GridNodeLayout? TryGetNodeLayout(int x, int y)
 		{
 			if (IsInBounds(x, y)) 
 				return layout[GetLinearIndex(x, y)];
@@ -53,30 +35,40 @@ namespace Glazman.Shapeshift
 			return null;
 		}
 
-		public GridNodeLayout GetNodeLayout(uint x, uint y)
+		public GridNodeLayout GetNodeLayout(GridIndex index)
+		{
+			return GetNodeLayout(index.x, index.y);
+		}
+		
+		public GridNodeLayout GetNodeLayout(int x, int y)
 		{
 			return layout[GetLinearIndex(x, y)];
 		}
 
-		public void SetNodeLayout(uint x, uint y, GridNodeLayout nodeLayout)
+		public void SetNodeLayout(GridIndex index, GridNodeLayout nodeLayout)
+		{
+			SetNodeLayout(index.x, index.y, nodeLayout);
+		}
+
+		public void SetNodeLayout(int x, int y, GridNodeLayout nodeLayout)
 		{
 			Assert.IsTrue(IsInBounds(x, y), $"Tried to set out-of-bounds node type: ({x},{y})={nodeLayout.nodeType}:{nodeLayout.itemType}");
 
 			layout[GetLinearIndex(x, y)] = nodeLayout;
 		}
 
-		private uint GetLinearIndex(uint x, uint y)
+		private int GetLinearIndex(int x, int y)
 		{
 			return (y * width) + x;
 		}
 
-		public static uint GetLinearIndex(uint x, uint y, uint width)
+		public static int GetLinearIndex(int x, int y, int width)
 		{
 			return (y * width) + x;
 		}
 		
 
-		public static LevelConfig CreateDefaultLevel(uint width, uint height)
+		public static LevelConfig CreateDefaultLevel(int width, int height)
 		{
 			var config = new LevelConfig
 			{
@@ -85,19 +77,19 @@ namespace Glazman.Shapeshift
 				layout = new GridNodeLayout[width * height]
 			};
 
-			for (uint y = 0; y < config.height; y++)
-				for (uint x = 0; x < config.width; x++)
+			for (int y = 0; y < config.height; y++)
+				for (int x = 0; x < config.width; x++)
 					config.SetNodeLayout(x, y, new GridNodeLayout() { nodeType=GridNodeType.Open, itemType=0 });
 
 			return config;
 		}
 
-		public static void ResizeLevel(uint width, uint height, ref LevelConfig config)
+		public static void ResizeLevel(int width, int height, ref LevelConfig config)
 		{
 			var resizedLayout = new GridNodeLayout[width * height];
 			
-			for (uint y = 0; y < height; y++)
-				for (uint x = 0; x < width; x++)
+			for (int y = 0; y < height; y++)
+				for (int x = 0; x < width; x++)
 				{
 					if (config.IsInBounds(x, y))
 						resizedLayout[GetLinearIndex(x, y, width)] = config.GetNodeLayout(x, y);

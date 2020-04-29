@@ -7,7 +7,7 @@ using System;
 namespace Glazman.Shapeshift
 {
 	[Serializable]
-	public struct LevelData
+	public struct LevelProgressData
 	{
 		public int index;
 		public int stars;
