@@ -11,6 +11,18 @@ using UnityEngine.Networking;
 
 namespace Glazman.Shapeshift
 {
+	public enum LevelGoalType
+	{
+		Undefined = 0,
+		Points	// win with points
+	}
+
+	public enum LevelChallengeType
+	{
+		Undefined = 0,
+		Moves	// limited number of moves
+	}
+	
 	/// <summary>
 	/// Static level data, everything needed to load a level as designed.
 	/// </summary>
@@ -20,6 +32,14 @@ namespace Glazman.Shapeshift
 		public int width;
 		public int height;
 		public GridNodeLayout[] layout;  // Unity can't serialize a multidimensional array, so let's emulate one
+		
+		public LevelGoalType goalType;
+		public int goal1;
+		public int goal2;
+		public int goal3;
+		
+		public LevelChallengeType challengeType;
+		public int challengeValue;
 
 
 		public bool IsInBounds(int x, int y)
@@ -74,7 +94,13 @@ namespace Glazman.Shapeshift
 			{
 				width = width,
 				height = height,
-				layout = new GridNodeLayout[width * height]
+				layout = new GridNodeLayout[width * height],
+				goalType = LevelGoalType.Points,
+				goal1 = 1000,
+				goal2 = 3000,
+				goal3 = 10000,
+				challengeType = LevelChallengeType.Moves,
+				challengeValue = 20
 			};
 
 			for (int y = 0; y < config.height; y++)

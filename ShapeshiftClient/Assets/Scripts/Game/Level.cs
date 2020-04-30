@@ -33,44 +33,22 @@ namespace Glazman.Shapeshift
 
 				case CommandType.SubmitMatch:
 				{
-					if (_levelState.IsValidMatch((command as SubmitMatchCommand)?.SelectedItems, out var matchedItems))
-					{
-						var matchEvents = new List<Event>() { new MatchSuccessEvent() };
-						
-						// remove the matched items and fix the grid
-						var gridUpdateEvents = _levelState.RemoveGridItems(CauseOfDeath.Matched, matchedItems);
-						matchEvents.AddRange(gridUpdateEvents);
-
-						BroadcastEvents(matchEvents);
-					}
-					else
-					{
-						BroadcastEvent(new MatchRejectedEvent());
-					}
+					var matchEvents = _levelState.TryMatchItems((command as SubmitMatchCommand)?.SelectedItems);
+					
+					BroadcastEvents(matchEvents);
 				} break;
 				
 				case CommandType.Debug_Win:
 				{
-					var levelData = Database.Load<LevelProgressData>(_levelState.LevelIndex);
-					levelData.Value.stars = 1;
-					levelData.Value.score = 999;
-
-					// TODO: designer control over unlock sequence
-					var nextLevelData = Database.Load<LevelProgressData>(_levelState.LevelIndex + 1);
-					nextLevelData.Value.isUnlocked = true;
-					Database.Save(nextLevelData);
-
-					BroadcastEvent(new LevelWinEvent());
+					BroadcastEvent(_levelState.Debug_WinLevel());
 				} break;
 
 				case CommandType.Debug_Lose:
 				{
-					BroadcastEvent(new LevelLoseEvent());
+					BroadcastEvent(_levelState.Debug_LoseLevel());
 				} break;
 			}
 		}
-
-
 
 		public static void Pause()
 		{

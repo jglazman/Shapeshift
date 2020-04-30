@@ -2,9 +2,10 @@
 // Copyright (c) 2020 Jeremy Glazman
 //
 
-using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
@@ -31,6 +32,7 @@ namespace Glazman.Shapeshift
 		[SerializeField] private RectTransform _playfieldTransform = null;
 		[SerializeField] private GridNodeView _gridNodePrefab = null;
 		[SerializeField] private GridItemView _gridItemPrefab = null;
+		[SerializeField] private LevelScoreView _levelScoreView = null;
 
 		private Queue<Level.Event> _pendingEvents = new Queue<Level.Event>();
 		private List<GridNodeView> _gridNodeInstances = new List<GridNodeView>();
@@ -40,7 +42,6 @@ namespace Glazman.Shapeshift
 		private int _levelIndex;
 		private float _tileSize;
 		private Vector3 _playfieldOrigin; // [0,0] = lower-left corner
-		
 		private static bool _didCreatePools = false;
 
 		private void Awake()
@@ -152,6 +153,8 @@ namespace Glazman.Shapeshift
 		{
 			Logger.LogWarningEditor($"Handle level event: {levelEvent.EventType}");
 
+			_levelScoreView.AddPoints(levelEvent.Points);
+
 			switch (levelEvent.EventType)
 			{
 				// TODO: keep transitioner in loading mode until we receive a LoadLevel event
@@ -162,7 +165,8 @@ namespace Glazman.Shapeshift
 
 				case Level.EventType.Win:
 				{
-					PopupViewController.Open<LevelWinPopup>();
+					var winPopup = PopupViewController.Open<LevelWinPopup>();
+					winPopup.ShowScore(levelEvent as Level.LevelWinEvent);
 				} break;
 
 				case Level.EventType.Lose:
@@ -322,6 +326,8 @@ namespace Glazman.Shapeshift
 			
 			Logger.LogEditor($"Load level={_levelIndex}, size={_levelConfig.width}x{_levelConfig.height}");
 
+			_levelScoreView.SetGoals(_levelConfig);
+			
 			// clear the playfield
 			ClearGridNodeInstances();
 			ClearGridItemInstances();
@@ -437,10 +443,15 @@ namespace Glazman.Shapeshift
 		
 		#region Level Editor
 		////////////////////////////////////////////////
-		[Header("Debug")]
-		[SerializeField] private GameObject _debugPanel = null;
-		[SerializeField] private InputField _debugInputWidth = null;
-		[SerializeField] private InputField _debugInputHeight = null;
+		[Header("Level Editor")]
+		[SerializeField] private GameObject _editModePanel = null;
+		[SerializeField] private TMP_InputField _editModeInputWidth = null;
+		[SerializeField] private TMP_InputField _editModeInputHeight = null;
+		[SerializeField] private TMP_InputField _editModeInputGoal1 = null;
+		[SerializeField] private TMP_InputField _editModeInputGoal2 = null;
+		[SerializeField] private TMP_InputField _editModeInputGoal3 = null;
+		[SerializeField] private TMP_InputField _editModeInputMoves = null;
+		[SerializeField] private TextMeshProUGUI _editModeWinTypeText = null;
 
 		private bool _editModeItemLayer = true;
 
@@ -515,20 +526,32 @@ namespace Glazman.Shapeshift
 				_levelConfig.SetNodeLayout(gridNode.Index, nodeLayout);
 			}
 
+			if (int.TryParse(_editModeInputGoal1.text, out var goal1))
+				_levelConfig.goal1 = Mathf.Max(0, goal1);
+
+			if (int.TryParse(_editModeInputGoal2.text, out var goal2))
+				_levelConfig.goal2 = Mathf.Max(0, goal2);
+
+			if (int.TryParse(_editModeInputGoal3.text, out var goal3))
+				_levelConfig.goal2 = Mathf.Max(0, goal3);
+
+			if (int.TryParse(_editModeInputMoves.text, out var moves))
+				_levelConfig.challengeValue = Mathf.Max(0, moves);
+
 			LevelConfig.ExportLevelFile(_levelIndex, _levelConfig);
 		}
 		
 		public void OnClick_EditMode_Resize()
 		{
-			if (!int.TryParse(_debugInputWidth.text, out var width))
+			if (!int.TryParse(_editModeInputWidth.text, out var width))
 				return;
 			
-			if (!int.TryParse(_debugInputHeight.text, out var height))
+			if (!int.TryParse(_editModeInputHeight.text, out var height))
 				return;
 
 			LevelConfig.ResizeLevel(width, height, ref _levelConfig);
 			LevelConfig.ExportLevelFile(_levelIndex, _levelConfig);
-			
+
 			// reload the level
 			Level.ExecuteCommand(new Level.LoadLevelCommand(_levelIndex));
 		}
@@ -549,9 +572,14 @@ namespace Glazman.Shapeshift
 			SetState(State.EditMode);
 			
 			// init the editor controls
-			_debugInputWidth.text = _levelConfig.width.ToString();
-			_debugInputHeight.text = _levelConfig.height.ToString();
-			_debugPanel.SetActive(true);
+			_editModeInputWidth.text = _levelConfig.width.ToString();
+			_editModeInputHeight.text = _levelConfig.height.ToString();
+			_editModeInputGoal1.text = _levelConfig.goal1.ToString();
+			_editModeInputGoal2.text = _levelConfig.goal2.ToString();
+			_editModeInputGoal3.text = _levelConfig.goal3.ToString();
+			_editModeInputMoves.text = _levelConfig.challengeValue.ToString();
+			_editModeWinTypeText.text = _levelConfig.challengeType.ToString();
+			_editModePanel.SetActive(true);
 		}
 
 		private void DisableEditMode()
@@ -559,7 +587,7 @@ namespace Glazman.Shapeshift
 			SetState(State.Uninitialized);
 			
 			// hide the controls
-			_debugPanel.SetActive(false);
+			_editModePanel.SetActive(false);
 		}
 		////////////////////////////////////////////////
 		#endregion

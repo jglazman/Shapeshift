@@ -5,22 +5,25 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Glazman.Shapeshift
 {
 	public class LevelState
 	{
 		public int LevelIndex { get; }
-		public int Width { get; }
-		public int Height { get; }
+		public LevelConfig Config { get; }
+		public int Width => Config?.width ?? 0;
+		public int Height => Config?.height ?? 0;
 		public GridNodeState[,] Grid { get; } // TODO: a generic "MultidimensionalList" container would be nice
 		public int Points { get; protected set; }
+		public int Moves { get; protected set; }
+		public int Result { get; protected set; } // -1 = lose, 0 = in progress, 1 = win
 
 		public LevelState(int levelIndex, LevelConfig config)
 		{
 			LevelIndex = levelIndex;
-			Width = config.width;
-			Height = config.height;
+			Config = config;
 			Grid = null;
 
 			if (config.width > 0 && config.height > 0)
@@ -77,8 +80,100 @@ namespace Glazman.Shapeshift
 
 			return null;
 		}
+
+		private bool CheckEndOfLevel()
+		{
+			Assert.IsTrue(Result == 0, "[LevelState] Checking for end of level, but the level already ended");
+
+			switch (Config.challengeType)
+			{
+				case LevelChallengeType.Moves:
+				{
+					return (Moves <= 0);
+				}
+
+				default:
+				{
+					Logger.LogError($"Unhandled LevelChallengeType: {Config.challengeType}");
+					return true; // we don't know how to end the level properly, so end it immediately
+				}
+			}
+		}
+
+		private Level.Event GetEndOfLevelResults()
+		{
+			Assert.IsTrue(Result == 0, "[LevelState] Getting end of level results, but the level already ended");
+			
+			switch (Config.goalType)
+			{
+				case LevelGoalType.Points:
+				{
+					if (Points < Config.goal1)
+					{
+						Result = -1;
+						
+						return new Level.LevelLoseEvent();
+					}
+					else
+					{
+						Result = 1;
+
+						var levelProgress = Database.Load<LevelProgressData>(LevelIndex);
+						int bestMoves = Mathf.Min(Moves, levelProgress.Value.moves);
+						int bestPoints = Mathf.Max(Points, levelProgress.Value.points);
+						levelProgress.Value.moves = bestMoves;
+						levelProgress.Value.points = bestPoints;
+						Database.Save(levelProgress);
+
+						int stars = Points >= Config.goal3 ? 3 : Points >= Config.goal2 ? 2 : 1;
+
+						return new Level.LevelWinEvent(stars, Moves, Points, bestMoves, bestPoints);
+					}
+				}
+
+				default:
+				{
+					Logger.LogError($"Unhandled LevelGoalType: {Config.goalType}");
+					Result = -1;
+					return new Level.LevelLoseEvent(); // we don't know how to end the level properly, so end it immediately
+				}
+			}
+		}
 		
-		public bool IsValidMatch(List<GridIndex> indices, out List<GridNodeState> matchedItems)
+		public List<Level.Event> TryMatchItems(List<GridIndex> selectedItems)
+		{
+			var matchEvents = new List<Level.Event>();
+			
+			if (IsValidMatch(selectedItems, out var matchedItems))
+			{
+				matchEvents.Add(new Level.MatchSuccessEvent());
+
+				// make the move
+				var gridUpdateEvents = RemoveGridItems(CauseOfDeath.Matched, matchedItems);
+				matchEvents.AddRange(gridUpdateEvents);
+				
+				// score the move
+				Moves++;
+				foreach (var gridEvent in gridUpdateEvents)
+					Points += gridEvent.Points;
+
+				// check for end of level
+				if (CheckEndOfLevel())
+				{
+					var endOfLevelEvent = GetEndOfLevelResults();
+					if (endOfLevelEvent != null)
+						matchEvents.Add(endOfLevelEvent);
+				}
+			}
+			else
+			{
+				matchEvents.Add(new Level.MatchRejectedEvent());
+			}
+
+			return matchEvents;
+		}
+
+		private bool IsValidMatch(List<GridIndex> indices, out List<GridNodeState> matchedItems)
 		{
 			matchedItems = new List<GridNodeState>();
 			
@@ -109,17 +204,14 @@ namespace Glazman.Shapeshift
 
 			return true;
 		}
-
-		public List<Level.Event> RemoveGridItems(CauseOfDeath reason, List<GridNodeState> itemsToRemove)
+		
+		private List<Level.Event> RemoveGridItems(CauseOfDeath reason, List<GridNodeState> itemsToRemove)
 		{
 			List<Level.Event> gridUpdateEvents = new List<Level.Event>();
 		
 			// record the event
 			var destroyedEvent = new Level.ItemsDestroyedEvent(reason, itemsToRemove);
 			gridUpdateEvents.Add(destroyedEvent);
-			
-			// score
-			Points += destroyedEvent.Points;
 			
 			// remove the items from the grid
 			foreach (var item in itemsToRemove)
@@ -261,6 +353,27 @@ namespace Glazman.Shapeshift
 			}
 
 			return false;
+		}
+
+
+
+		public Level.Event Debug_WinLevel()
+		{
+			var levelProgress = Database.Load<LevelProgressData>(LevelIndex);
+			levelProgress.Value.stars = 3;
+			levelProgress.Value.points = 9999;
+			levelProgress.Value.moves = 99;
+			Database.Save(levelProgress);
+
+			LevelProgressData.UnlockLevel(LevelIndex + 1);
+
+			return new Level.LevelWinEvent(3, 99, 9999, 99, 9999);
+		}
+
+		public Level.Event Debug_LoseLevel()
+		{
+			Result = -1;
+			return new Level.LevelLoseEvent();
 		}
 	}
 }

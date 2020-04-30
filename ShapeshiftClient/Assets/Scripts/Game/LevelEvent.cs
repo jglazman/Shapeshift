@@ -94,6 +94,21 @@ namespace Glazman.Shapeshift
 		public class LevelWinEvent : Event
 		{
 			public override EventType EventType { get { return EventType.Win; } }
+
+			public int Stars { get; }
+			public int Moves { get; }
+			public int Score { get; }
+			public int BestMoves { get; }
+			public int BestScore { get; }
+
+			public LevelWinEvent(int stars, int moves, int points, int bestMoves, int bestPoints)
+			{
+				Stars = stars;
+				Moves = moves;
+				Score = points;
+				BestMoves = bestMoves;
+				BestScore = bestPoints;
+			}
 		}
 
 		public class LevelLoseEvent : Event
