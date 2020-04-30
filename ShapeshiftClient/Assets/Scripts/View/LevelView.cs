@@ -222,6 +222,25 @@ namespace Glazman.Shapeshift
 					}
 				} break;
 				
+				case Level.EventType.ItemsSwapped:
+				{
+					var itemsSwappedEvent = levelEvent as Level.ItemsSwappedEvent;
+
+					foreach (var swappedItem in itemsSwappedEvent.SwappedItems)
+					{
+						var sourceItem = TryGetGridItem(swappedItem.ReferenceIndex.Value);
+						Assert.IsNotNull(sourceItem);
+						Assert.IsTrue(sourceItem.ItemType == swappedItem.ItemType);
+						
+						var destItem = TryGetGridItem(swappedItem.Index);
+						Assert.IsNotNull(destItem);
+						// TODO: we can't verify the item type of the other node with this data structure.
+
+						sourceItem.SetType(destItem.ItemType, true);
+						destItem.SetType(swappedItem.ItemType, true);
+					}
+				} break;
+				
 				case Level.EventType.ItemsDestroyed:
 				{
 					var itemsDestroyedEvent = levelEvent as Level.ItemsDestroyedEvent;
@@ -444,6 +463,16 @@ namespace Glazman.Shapeshift
 		public void OnClick_Pause()
 		{
 			PopupViewController.Open<LevelPausePopup>();
+		}
+
+		public void OnClick_Shuffle()
+		{
+			PopupViewController.Open<LevelShufflePopup>();
+		}
+
+		public void OnClick_ShuffleConfirmed()
+		{
+			SendLevelCommand(new Level.ShuffleGridCommand());
 		}
 
 		

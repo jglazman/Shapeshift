@@ -37,6 +37,13 @@ namespace Glazman.Shapeshift
 					
 					BroadcastEvents(matchEvents);
 				} break;
+
+				case CommandType.ShuffleGrid:
+				{
+					var swappedEvent = _levelState.ShuffleGridItems();
+					
+					BroadcastEvent(swappedEvent);
+				} break;
 				
 				case CommandType.Debug_Win:
 				{

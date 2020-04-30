@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Random = UnityEngine.Random;
 
 namespace Glazman.Shapeshift
 {
@@ -122,9 +123,10 @@ namespace Glazman.Shapeshift
 						Result = 1;
 
 						var levelProgress = Database.Load<LevelProgressData>(LevelIndex);
-						int stars = Points >= Config.goal3 ? 3 : Points >= Config.goal2 ? 2 : 1;
 						int bestMoves = levelProgress.Value.moves <= 0 ? Moves : Mathf.Min(Moves, levelProgress.Value.moves);
 						int bestPoints = Mathf.Max(Points, levelProgress.Value.points);
+						int stars = Points >= Config.goal3 ? 3 : Points >= Config.goal2 ? 2 : 1;
+						
 						levelProgress.Value.moves = bestMoves;
 						levelProgress.Value.points = bestPoints;
 						levelProgress.Value.stars = Mathf.Max(stars, levelProgress.Value.stars);
@@ -148,7 +150,7 @@ namespace Glazman.Shapeshift
 		public List<Level.Event> TryMatchItems(List<GridIndex> selectedItems)
 		{
 			var matchEvents = new List<Level.Event>();
-			
+
 			if (IsValidMatch(selectedItems, out var matchedItems))
 			{
 				matchEvents.Add(new Level.MatchSuccessEvent());
@@ -193,7 +195,7 @@ namespace Glazman.Shapeshift
 			var firstItem = TryGetGridNodeState(indices[0]);
 			if (firstItem == null || firstItem.itemType <= 0)
 				return false; // must select valid items
-				
+			
 			matchedItems.Add(firstItem);
 
 			var previousItem = firstItem; 
@@ -294,7 +296,7 @@ namespace Glazman.Shapeshift
 			
 			for (int x = 0; x < Width; x++)
 			{
-				for (int y = 1; y < Height; y++)	// skip the lowest rowq
+				for (int y = 1; y < Height; y++)	// skip the lowest row
 				{
 					// find a filled node
 					var node = Grid[x, y];
@@ -365,6 +367,38 @@ namespace Glazman.Shapeshift
 			return false;
 		}
 
+		public Level.ItemsSwappedEvent ShuffleGridItems()
+		{
+			var filledNodes = new List<GridNodeState>();
+			
+			for (int x = 0; x < Width; x++)
+				for (int y = 0; y < Height; y++)
+				{
+					var node = Grid[x, y];
+					if (node.IsFilled())
+						filledNodes.Add(node);
+				}
+			
+			var swappedItems = new List<GridEventItem>();
+
+			int count = filledNodes.Count;
+			for (int i = 0; i < count; i++)
+			{
+				var node1 = filledNodes[i];
+				var node2 = filledNodes[Random.Range(0, count)];	// we could pick ourself here. that's fine.
+
+				// swap
+				var node2Type = node2.itemType;
+				node2.itemType = node1.itemType;
+				node1.itemType = node2Type;
+				
+				// record the event
+				var swappedItem = GridEventItem.Create(node1, 0, node2.index);
+				swappedItems.Add(swappedItem);
+			}
+
+			return new Level.ItemsSwappedEvent(swappedItems);
+		}
 
 
 		public Level.Event Debug_WinLevel()

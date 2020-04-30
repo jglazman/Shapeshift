@@ -44,6 +44,7 @@ namespace Glazman.Shapeshift
 			MatchRejected,
 			ItemsCreated,
 			ItemsMoved,
+			ItemsSwapped,
 			ItemsDestroyed
 		}
 
@@ -169,6 +170,18 @@ namespace Glazman.Shapeshift
 			public ItemsMovedEvent(List<GridEventItem> movedItems)
 			{
 				MovedItems = new List<GridEventItem>(movedItems);
+			}
+		}
+
+		public class ItemsSwappedEvent : Event
+		{
+			public override EventType EventType { get { return EventType.ItemsSwapped; } }
+
+			public List<GridEventItem> SwappedItems { get; }
+
+			public ItemsSwappedEvent(List<GridEventItem> swappedItems)
+			{
+				SwappedItems = new List<GridEventItem>(swappedItems);
 			}
 		}
 

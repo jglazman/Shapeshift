@@ -14,6 +14,7 @@ namespace Glazman.Shapeshift
 			
 			LoadLevel,
 			SubmitMatch,
+			ShuffleGrid,
 			
 			// debug
 			Debug_Win,
@@ -57,6 +58,11 @@ namespace Glazman.Shapeshift
 			{
 				SelectedItems = new List<GridIndex>(selectedItems);
 			}
+		}
+
+		public class ShuffleGridCommand : Command
+		{
+			public override CommandType CommandType { get { return CommandType.ShuffleGrid; } }
 		}
 		
 		
