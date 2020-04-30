@@ -68,7 +68,10 @@ namespace Glazman.Shapeshift
 			for (int yUp = y + 1; yUp < Height; yUp++)
 			{
 				var nodeUp = Grid[x, yUp];
-				if (nodeUp.nodeType == GridNodeType.Open && nodeUp.itemType > 0)
+				if (nodeUp.nodeType == GridNodeType.Closed)
+					return null; // blocked
+				
+				if (nodeUp.IsFilled())
 					return nodeUp;
 			}
 
@@ -107,18 +110,6 @@ namespace Glazman.Shapeshift
 			return true;
 		}
 
-		private bool UpdateGridState(ref List<Level.Event> gridUpdateEvents)
-		{
-			// pull items down
-			bool didUpdate = PullDownGridItems(ref gridUpdateEvents);
-		
-			// create new items
-			if (DropInGridItems(ref gridUpdateEvents))
-				didUpdate = true;
-			
-			return didUpdate;
-		}
-
 		public List<Level.Event> RemoveGridItems(CauseOfDeath reason, List<GridNodeState> itemsToRemove)
 		{
 			List<Level.Event> gridUpdateEvents = new List<Level.Event>();
@@ -144,6 +135,19 @@ namespace Glazman.Shapeshift
 			return gridUpdateEvents;
 		}
 
+		private bool UpdateGridState(ref List<Level.Event> gridUpdateEvents)
+		{
+			bool didUpdate = PullDownGridItems(ref gridUpdateEvents);
+		
+			if (CollapseGridItems(ref gridUpdateEvents))
+				didUpdate = true;
+			
+			if (DropInGridItems(ref gridUpdateEvents))
+				didUpdate = true;
+			
+			return didUpdate;
+		}
+
 		private bool PullDownGridItems(ref List<Level.Event> gridUpdateEvents)
 		{
 			var movedItems = new List<GridEventItem>();
@@ -152,24 +156,73 @@ namespace Glazman.Shapeshift
 			{
 				for (int y = 0; y < Height; y++)
 				{
-					// TODO: more advanced falling rules (e.g. move around closed nodes)
-
-					// pull items down to fill the empty nodes
+					// find an empty node
 					var node = Grid[x, y];
-					if (node.nodeType == GridNodeType.Open && node.itemType <= 0)
+					if (!node.IsEmpty())
+						continue;
+					
+					// find an item above
+					var aboveFilledNode = FindFirstFilledNodeAbove(x, y);
+					if (aboveFilledNode != null)
 					{
-						// find an item above
-						var aboveFilledNode = FindFirstFilledNodeAbove(x, y);
-						if (aboveFilledNode != null)
-						{
-							// pull the item down
-							node.itemType = aboveFilledNode.itemType;
-							aboveFilledNode.itemType = -1;
-							
-							// record the event
-							var movedItem = GridEventItem.Create(node, 0, aboveFilledNode.index);
-							movedItems.Add(movedItem);
-						}
+						// pull the item down
+						node.itemType = aboveFilledNode.itemType;
+						aboveFilledNode.itemType = -1;
+						
+						// record the event
+						var movedItem = GridEventItem.Create(node, 0, aboveFilledNode.index);
+						movedItems.Add(movedItem);
+					}
+				}
+			}
+
+			if (movedItems.Count > 0)
+			{
+				var itemsMovedEvent = new Level.ItemsMovedEvent(movedItems);
+				gridUpdateEvents.Add(itemsMovedEvent);
+				return true;
+			}
+
+			return false;
+		}
+		
+		private bool CollapseGridItems(ref List<Level.Event> gridUpdateEvents)
+		{
+			var movedItems = new List<GridEventItem>();
+			
+			for (int x = 0; x < Width; x++)
+			{
+				for (int y = 1; y < Height; y++)	// skip the lowest rowq
+				{
+					// find a filled node
+					var node = Grid[x, y];
+					if (!node.IsFilled())
+						continue;
+					
+					// collapse left
+					var nodeLeft = TryGetGridNodeState(x - 1, y - 1);
+					if (nodeLeft?.IsEmpty() == true)
+					{
+						nodeLeft.itemType = node.itemType;
+						node.itemType = -1;
+						
+						// record the event
+						var movedItem = GridEventItem.Create(nodeLeft, 0, node.index);
+						movedItems.Add(movedItem);
+						continue;
+					}
+					
+					// collapse right
+					var nodeRight = TryGetGridNodeState(x + 1, y - 1);
+					if (nodeRight?.IsEmpty() == true)
+					{
+						nodeRight.itemType = node.itemType;
+						node.itemType = -1;
+						
+						// record the event
+						var movedItem = GridEventItem.Create(nodeRight, 0, node.index);
+						movedItems.Add(movedItem);
+						continue;
 					}
 				}
 			}

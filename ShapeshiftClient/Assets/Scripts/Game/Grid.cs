@@ -84,6 +84,11 @@ namespace Glazman.Shapeshift
 			return nodeType == GridNodeType.Open && itemType <= 0;
 		}
 
+		public bool IsFilled()
+		{
+			return nodeType == GridNodeType.Open && itemType > 0;
+		}
+
 		public bool TryRandomizeItemType()
 		{
 			if (nodeType == GridNodeType.Open)
