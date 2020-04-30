@@ -141,14 +141,18 @@ namespace Glazman.Shapeshift
 					HandleLevelEvent(_pendingEvents.Dequeue());
 
 				// TODO: multi-frame handling of events (animations, etc.)
-				SetState(State.WaitingForInput);
+				//SetState(State.WaitingForInput);
+				CoroutineRunner.WaitSecondsThenRun(0.2f, () =>
+				{
+					SetState(State.WaitingForInput);
+				});
 
 				return true;
 			}
 
 			return false;
 		}
-		
+
 		private void HandleLevelEvent(Level.Event levelEvent)
 		{
 			Logger.LogWarningEditor($"Handle level event: {levelEvent.EventType}");
