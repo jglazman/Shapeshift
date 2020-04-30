@@ -24,12 +24,12 @@ namespace Glazman.Shapeshift
 	
 	public class AnimEventReceiver : MonoBehaviour
 	{
-		public Action<AnimEventPayload> OnAnimEvent;
+		public Action<Animator, AnimEventPayload> OnAnimEvent;
 
 
-		public void SendEvent(AnimEventPayload animEvent)
+		public void SendEvent(Animator animator, AnimEventPayload animEvent)
 		{
-			OnAnimEvent?.Invoke(animEvent);
+			OnAnimEvent?.Invoke(animator, animEvent);
 		}
 	}
 }

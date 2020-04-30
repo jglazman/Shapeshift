@@ -85,19 +85,22 @@ namespace Glazman.Shapeshift
 		{
 			Assert.IsTrue(Result == 0, "[LevelState] Checking for end of level, but the level already ended");
 
-			switch (Config.challengeType)
-			{
-				case LevelChallengeType.Moves:
-				{
-					return (Moves <= 0);
-				}
-
-				default:
-				{
-					Logger.LogError($"Unhandled LevelChallengeType: {Config.challengeType}");
-					return true; // we don't know how to end the level properly, so end it immediately
-				}
-			}
+			return (Moves >= Config.challengeValue || Points >= Config.goal3);
+			
+			// TODO: other game modes
+			// switch (Config.challengeType)
+			// {
+			// 	case LevelChallengeType.Moves:
+			// 	{
+			// 		return (Moves >= Config.challengeValue);
+			// 	}
+			//
+			// 	default:
+			// 	{
+			// 		Logger.LogError($"Unhandled LevelChallengeType: {Config.challengeType}");
+			// 		return true; // we don't know how to end the level properly, so end it immediately
+			// 	}
+			// }
 		}
 
 		private Level.Event GetEndOfLevelResults()
@@ -119,14 +122,16 @@ namespace Glazman.Shapeshift
 						Result = 1;
 
 						var levelProgress = Database.Load<LevelProgressData>(LevelIndex);
-						int bestMoves = Mathf.Min(Moves, levelProgress.Value.moves);
+						int stars = Points >= Config.goal3 ? 3 : Points >= Config.goal2 ? 2 : 1;
+						int bestMoves = levelProgress.Value.moves <= 0 ? Moves : Mathf.Min(Moves, levelProgress.Value.moves);
 						int bestPoints = Mathf.Max(Points, levelProgress.Value.points);
 						levelProgress.Value.moves = bestMoves;
 						levelProgress.Value.points = bestPoints;
+						levelProgress.Value.stars = Mathf.Max(stars, levelProgress.Value.stars);
 						Database.Save(levelProgress);
 
-						int stars = Points >= Config.goal3 ? 3 : Points >= Config.goal2 ? 2 : 1;
-
+						LevelProgressData.UnlockLevel(LevelIndex + 1);
+						
 						return new Level.LevelWinEvent(stars, Moves, Points, bestMoves, bestPoints);
 					}
 				}
@@ -153,9 +158,14 @@ namespace Glazman.Shapeshift
 				matchEvents.AddRange(gridUpdateEvents);
 				
 				// score the move
-				Moves++;
+				int pointsDelta = 0;
 				foreach (var gridEvent in gridUpdateEvents)
-					Points += gridEvent.Points;
+					pointsDelta += gridEvent.EventPoints;
+				
+				Points += pointsDelta;
+				Moves++;
+				
+				matchEvents.Add(new Level.UpdateScoreEvent(Moves, 1, Points, pointsDelta));
 
 				// check for end of level
 				if (CheckEndOfLevel())
@@ -359,6 +369,8 @@ namespace Glazman.Shapeshift
 
 		public Level.Event Debug_WinLevel()
 		{
+			Result = 1;
+			
 			var levelProgress = Database.Load<LevelProgressData>(LevelIndex);
 			levelProgress.Value.stars = 3;
 			levelProgress.Value.points = 9999;
@@ -373,6 +385,7 @@ namespace Glazman.Shapeshift
 		public Level.Event Debug_LoseLevel()
 		{
 			Result = -1;
+			
 			return new Level.LevelLoseEvent();
 		}
 	}

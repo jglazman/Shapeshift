@@ -35,8 +35,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -213, y: -269.05}
-  m_SizeDelta: {x: 115.8, y: 127.8}
+  m_AnchoredPosition: {x: -200, y: -245}
+  m_SizeDelta: {x: 80, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4976180924367026345
 CanvasRenderer:
@@ -870,10 +870,10 @@ RectTransform:
   m_Father: {fileID: 4927193261409055283}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.5}
-  m_AnchorMax: {x: 1, y: 0.5}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -64, y: 800}
+  m_SizeDelta: {x: 600, y: 720}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4927193261224849435
 CanvasRenderer:
@@ -923,6 +923,7 @@ GameObject:
   - component: {fileID: 4927193261409055282}
   - component: {fileID: 4927193261409055285}
   - component: {fileID: 4927193261409055284}
+  - component: {fileID: 68242790857063418}
   m_Layer: 5
   m_Name: LevelPausePopup
   m_TagString: Untagged
@@ -1001,7 +1002,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 720, y: 960}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 1
+  m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -1023,6 +1024,25 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!95 &68242790857063418
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4927193261409055286}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 5d1b78e9bdf2a4dac9b413d88d43b342, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1 &5023706104279276224
 GameObject:
   m_ObjectHideFlags: 0
@@ -1058,7 +1078,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -130, y: 506}
+  m_AnchoredPosition: {x: -130, y: 436}
   m_SizeDelta: {x: 163.7, y: 163.7}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &6044912701552167349
@@ -1545,8 +1565,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 218, y: -266}
-  m_SizeDelta: {x: 118.6, y: 133.9}
+  m_AnchoredPosition: {x: 200, y: -245}
+  m_SizeDelta: {x: 80, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2645365837135494096
 CanvasRenderer:
@@ -1670,7 +1690,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -108}
+  m_AnchoredPosition: {x: 0, y: -120}
   m_SizeDelta: {x: 310.2, y: 130.8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4210968479746793840
@@ -1918,7 +1938,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 129.99998, y: 505.99994}
+  m_AnchoredPosition: {x: 129.99998, y: 435.99994}
   m_SizeDelta: {x: 163.7, y: 163.7}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1225819533170042594

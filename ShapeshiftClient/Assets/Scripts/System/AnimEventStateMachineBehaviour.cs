@@ -20,8 +20,6 @@ namespace Glazman.Shapeshift
 		public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
 		{
 			SendEvents(animator, AnimEventType.OnStateExit);
-			
-			Logger.LogEditor($"[OnStateExit] {animator.name}, {stateInfo.shortNameHash}");
 		}
 
 		private void SendEvents(Animator animator, AnimEventType eventType)
@@ -31,7 +29,7 @@ namespace Glazman.Shapeshift
 			{
 				var exitEvents = _animEvents.Where(e => e.eventType == eventType);
 				foreach (var exitEvent in exitEvents)
-					receiver.SendEvent(exitEvent);
+					receiver.SendEvent(animator, exitEvent);
 			}
 
 		}

@@ -35,6 +35,20 @@ namespace Glazman.Shapeshift
 		}
 
 		
+		public static void WaitSecondsThenRun(float delay, Action action)
+		{
+			Assert.IsTrue(_instance != null, "[CoroutineRunner] CoroutineRunner instance is missing");
+
+			_instance.StartCoroutine(Coroutine_WaitSecondsThenRun(delay, action));
+		}
+		
+		private static IEnumerator Coroutine_WaitSecondsThenRun(float delay, Action action)
+		{
+			yield return new WaitForSeconds(delay);
+
+			action?.Invoke();
+		}
+		
 		public static void WaitSecondsThenRun(float delay, IEnumerator coroutine)
 		{
 			Assert.IsTrue(_instance != null, "[CoroutineRunner] CoroutineRunner instance is missing");

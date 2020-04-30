@@ -153,8 +153,6 @@ namespace Glazman.Shapeshift
 		{
 			Logger.LogWarningEditor($"Handle level event: {levelEvent.EventType}");
 
-			_levelScoreView.AddPoints(levelEvent.Points);
-
 			switch (levelEvent.EventType)
 			{
 				// TODO: keep transitioner in loading mode until we receive a LoadLevel event
@@ -172,6 +170,13 @@ namespace Glazman.Shapeshift
 				case Level.EventType.Lose:
 				{
 					PopupViewController.Open<LevelLosePopup>();
+				} break;
+
+				case Level.EventType.UpdateScore:
+				{
+					var scoreEvent = levelEvent as Level.UpdateScoreEvent;
+					_levelScoreView.SetPoints(scoreEvent.Points);
+					_levelScoreView.SetMoves(_levelConfig.challengeValue - scoreEvent.Moves);
 				} break;
 				
 				case Level.EventType.MatchSuccess:
@@ -326,7 +331,7 @@ namespace Glazman.Shapeshift
 			
 			Logger.LogEditor($"Load level={_levelIndex}, size={_levelConfig.width}x{_levelConfig.height}");
 
-			_levelScoreView.SetGoals(_levelConfig);
+			_levelScoreView.SetGoals(_levelIndex, _levelConfig);
 			
 			// clear the playfield
 			ClearGridNodeInstances();
@@ -335,7 +340,8 @@ namespace Glazman.Shapeshift
 			// if there is no grid state then auto-open the level editor
 			if (loadLevelEvent.InitialGridState == null)
 			{
-				MessagePopup.ShowMessage("This level is invalid. Edit mode is enabled.");
+				MessagePopup.ShowMessage("This level is empty. Edit mode is enabled.");
+				_levelConfig = LevelConfig.CreateDefaultLevel(5, 5);
 				EnableEditMode();
 				return;
 			}
@@ -533,7 +539,7 @@ namespace Glazman.Shapeshift
 				_levelConfig.goal2 = Mathf.Max(0, goal2);
 
 			if (int.TryParse(_editModeInputGoal3.text, out var goal3))
-				_levelConfig.goal2 = Mathf.Max(0, goal3);
+				_levelConfig.goal3 = Mathf.Max(0, goal3);
 
 			if (int.TryParse(_editModeInputMoves.text, out var moves))
 				_levelConfig.challengeValue = Mathf.Max(0, moves);

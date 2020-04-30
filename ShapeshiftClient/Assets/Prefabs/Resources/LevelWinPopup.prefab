@@ -1219,7 +1219,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _animEventReceiver: {fileID: 421685855470969868}
   _starsAnimator: {fileID: 3412431497436227711}
-  _tallyAnimation: {fileID: 0}
+  _tallyAnimation: {fileID: 6105331456616462713}
   _scoreText: {fileID: 1183904868160572396}
   _movesText: {fileID: 3775311785929473422}
   _bestScore: {fileID: 4977925270975322561}

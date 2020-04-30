@@ -29,20 +29,27 @@ namespace Glazman.Shapeshift
 			_animEventReceiver.OnAnimEvent = OnAnimEvent;
 		}
 
-		private void OnAnimEvent(AnimEventPayload animEvent)
+		private void OnAnimEvent(Animator animator, AnimEventPayload animEvent)
 		{
 			if (animEvent.key == STARS_KEY && animEvent.value == _numStars)
 			{
-				_tallyAnimation.Play();
+				// TODO: this was a quick hack to splice some animations togther
+				float delay = _numStars == 3 ? 1.3f : 0.5f;
+				CoroutineRunner.WaitSecondsThenRun(delay, () =>
+				{
+					animator.StopPlayback();
+					animator.enabled = false;
+					_tallyAnimation.Play();
+				});
 			}
 		}
 
 		public void ShowScore(Level.LevelWinEvent winEvent)
 		{
 			_numStars = winEvent.Stars;
-			_scoreText.text = $"{winEvent.Score:n0}";
+			_scoreText.text = $"{winEvent.Points:n0}";
 			_movesText.text = $"{winEvent.Moves}";
-			_bestScore.SetActive(winEvent.Score >= winEvent.BestScore);
+			_bestScore.SetActive(winEvent.Points >= winEvent.BestPoints);
 			_bestMoves.SetActive(winEvent.Moves <= winEvent.BestMoves);
 
 			_starsAnimator.SetInteger(StarsInteger, winEvent.Stars);

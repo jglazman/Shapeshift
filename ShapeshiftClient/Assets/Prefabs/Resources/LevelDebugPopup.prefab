@@ -183,14 +183,14 @@ RectTransform:
   m_GameObject: {fileID: 2237269456564111333}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.0324272, y: 1.0324272, z: 1.0324272}
   m_Children: []
-  m_Father: {fileID: 4927193261409055283}
-  m_RootOrder: 2
+  m_Father: {fileID: 4927193261224849437}
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -68.99985, y: -298.31616}
+  m_AnchoredPosition: {x: -45, y: -39}
   m_SizeDelta: {x: 128, y: 128}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1209812522838121441
@@ -538,13 +538,14 @@ RectTransform:
   - {fileID: 7420210359306961711}
   - {fileID: 1183725353837610891}
   - {fileID: 3333340027812633357}
+  - {fileID: 1800600438971296768}
   m_Father: {fileID: 4927193261409055283}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.5}
-  m_AnchorMax: {x: 1, y: 0.5}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -64, y: 800}
+  m_SizeDelta: {x: 600, y: 720}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4927193261224849435
 CanvasRenderer:
@@ -594,6 +595,7 @@ GameObject:
   - component: {fileID: 4927193261409055285}
   - component: {fileID: 4927193261409055284}
   - component: {fileID: 6963094803954600267}
+  - component: {fileID: 9172999583413462567}
   m_Layer: 5
   m_Name: LevelDebugPopup
   m_TagString: Untagged
@@ -614,7 +616,6 @@ RectTransform:
   m_Children:
   - {fileID: 4927193260810457507}
   - {fileID: 4927193261224849437}
-  - {fileID: 1800600438971296768}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -661,7 +662,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 720, y: 960}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 1
+  m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -695,6 +696,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b22ff1bba874fddbe59d17e86b83d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!95 &9172999583413462567
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4927193261409055286}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 5d1b78e9bdf2a4dac9b413d88d43b342, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1 &5528040588309998997
 GameObject:
   m_ObjectHideFlags: 0

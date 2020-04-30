@@ -21,8 +21,10 @@ namespace Glazman.Shapeshift
 		[SerializeField] private GameObject _goal3Completed = null;
 		[SerializeField] private TextMeshProUGUI _pointsText = null;
 		[SerializeField] private TextMeshProUGUI _movesText = null;
+		[SerializeField] private TextMeshProUGUI _levelText = null;
 		[SerializeField] private Animator _scoreAnimator = null;
 		[SerializeField] private float _lerpDuration = 1f;
+		[SerializeField] private float _goalCompletedOffset = 5f;
 
 		private LevelConfig _levelConfig;
 		
@@ -33,19 +35,21 @@ namespace Glazman.Shapeshift
 		private bool _isGoal2Completed;
 		private bool _isGoal3Completed;
 
-		public void SetGoals(LevelConfig levelConfig)
+		public void SetGoals(int levelIndex, LevelConfig levelConfig)
 		{
 			_levelConfig = levelConfig;
 			
 			// TODO: support other goal and challenge types
 			
-			var sliderSize = _sliderTransform.sizeDelta;
-			_goal1Transform.anchoredPosition = new Vector2(sliderSize.x * ((float)levelConfig.goal1 / (float)levelConfig.goal3), _goal1Transform.anchoredPosition.y);
-			_goal2Transform.anchoredPosition = new Vector2(sliderSize.x * ((float)levelConfig.goal2 / (float)levelConfig.goal3), _goal2Transform.anchoredPosition.y);
+			//var sliderSize = _sliderTransform.sizeDelta;
+			var sliderSize = _sliderTransform.rect;
+			_goal1Transform.anchoredPosition = new Vector2(sliderSize.width * ((float)levelConfig.goal1 / (float)levelConfig.goal3) + _goalCompletedOffset, _goal1Transform.anchoredPosition.y);
+			_goal2Transform.anchoredPosition = new Vector2(sliderSize.width * ((float)levelConfig.goal2 / (float)levelConfig.goal3) + _goalCompletedOffset, _goal2Transform.anchoredPosition.y);
 
 			_slider.value = 0;
 			_pointsText.text = "0";
 			_movesText.text = levelConfig.challengeValue.ToString();
+			_levelText.text = levelIndex.ToString();
 		}
 		
 		private void Update()
@@ -85,15 +89,17 @@ namespace Glazman.Shapeshift
 		}
 
 
-		public void AddPoints(int points)
+		public void SetPoints(int points)
 		{
-			if (points > 0)
-			{
-				_desiredScore += points;
-				_lerpTime = 0f;
+			_desiredScore = points;
+			_lerpTime = 0f;
 
-				PlayAnimation(true);
-			}
+			PlayAnimation(true);
+		}
+
+		public void SetMoves(int moves)
+		{
+			_movesText.text = moves.ToString();
 		}
 
 		private void PlayAnimation(bool play)

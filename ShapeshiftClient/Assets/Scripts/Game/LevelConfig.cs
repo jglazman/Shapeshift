@@ -100,7 +100,7 @@ namespace Glazman.Shapeshift
 				goal2 = 3000,
 				goal3 = 10000,
 				challengeType = LevelChallengeType.Moves,
-				challengeValue = 20
+				challengeValue = 10
 			};
 
 			for (int y = 0; y < config.height; y++)

@@ -39,6 +39,7 @@ namespace Glazman.Shapeshift
 			LoadLevel,
 			Win,
 			Lose,
+			UpdateScore,
 			MatchSuccess,
 			MatchRejected,
 			ItemsCreated,
@@ -53,7 +54,7 @@ namespace Glazman.Shapeshift
 			//public readonly Payload Payload = new Payload();
 
 			/// <summary>Any event can generate points.</summary>
-			public int Points { get; protected set; }
+			public int EventPoints { get; protected set; }
 		}
 
 		public class LoadLevelEvent : Event
@@ -97,23 +98,41 @@ namespace Glazman.Shapeshift
 
 			public int Stars { get; }
 			public int Moves { get; }
-			public int Score { get; }
+			public int Points { get; }
 			public int BestMoves { get; }
-			public int BestScore { get; }
+			public int BestPoints { get; }
 
 			public LevelWinEvent(int stars, int moves, int points, int bestMoves, int bestPoints)
 			{
 				Stars = stars;
 				Moves = moves;
-				Score = points;
+				Points = points;
 				BestMoves = bestMoves;
-				BestScore = bestPoints;
+				BestPoints = bestPoints;
 			}
 		}
 
 		public class LevelLoseEvent : Event
 		{
 			public override EventType EventType { get { return EventType.Lose; } }
+		}
+
+		public class UpdateScoreEvent : Event
+		{
+			public override EventType EventType { get { return EventType.UpdateScore; } }
+
+			public int Moves { get; }
+			public int MovesDelta { get; }
+			public int Points { get; }
+			public int PointsDelta { get; }
+
+			public UpdateScoreEvent(int moves, int movesDelta, int points, int pointsDelta)
+			{
+				Moves = moves;
+				MovesDelta = movesDelta;
+				Points = points;
+				PointsDelta = pointsDelta;
+			}
 		}
 		
 		public class MatchSuccessEvent : Event
@@ -170,7 +189,7 @@ namespace Glazman.Shapeshift
 					int points = 100 + (25 * i);	// TODO: data-driven scoring
 					var item = GridEventItem.Create(destroyedItems[i], points);
 					DestroyedItems.Add(item);
-					Points += points;	// total points
+					EventPoints += points;	// total points
 				}
 			}
 		}

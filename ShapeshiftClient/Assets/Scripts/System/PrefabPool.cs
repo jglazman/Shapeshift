@@ -43,7 +43,7 @@ namespace Glazman.Shapeshift
 		{
 			Assert.IsTrue(Instance == this, "[PrefabPool] Destroyed a zombie.");
 
-			ClearAll();
+			//ClearAll();	// TODO: Unity sometimes executes this out of order on shutdown?
 
 			HiddenRoot = null;
 			Instance = null;
@@ -111,7 +111,7 @@ namespace Glazman.Shapeshift
 			
 			int numChildren = HiddenRoot.childCount;
 			for (int i = numChildren - 1; i >= 0; i--)
-				Destroy(HiddenRoot.GetChild(i));
+				Destroy(HiddenRoot.GetChild(i).gameObject);
 			
 			_pools.Clear();
 		}
