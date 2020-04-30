@@ -40,16 +40,27 @@ namespace Glazman.Shapeshift
 		private int _levelIndex;
 		private float _tileSize;
 		private Vector3 _playfieldOrigin; // [0,0] = lower-left corner
-
+		
+		private static bool _didCreatePools = false;
 
 		private void Awake()
 		{
+			if (!_didCreatePools)
+			{
+				PrefabPool.CreatePool<GridNodeView>(_gridNodePrefab);
+				PrefabPool.CreatePool<GridItemView>(_gridItemPrefab);
+				_didCreatePools = true;
+			}
+			
 			Level.ListenForLevelEvents(ReceiveLevelEvents);
 			DisableEditMode();
 		}
 
 		private void OnDestroy()
 		{
+			ClearGridNodeInstances();
+			ClearGridItemInstances();
+			
 			Level.StopListeningForLevelEvents(ReceiveLevelEvents);
 			SpriteResource.ClearCache();
 		}
@@ -341,7 +352,8 @@ namespace Glazman.Shapeshift
 					var pos = CalculateGridNodePosition(x, y);
 					
 					// load the node from the config
-					var gridNode = Instantiate(_gridNodePrefab, _playfieldTransform);
+					//var gridNode = Instantiate(_gridNodePrefab, _playfieldTransform);
+					var gridNode = PrefabPool.Get<GridNodeView>(_playfieldTransform);
 					gridNode.Configure(x, y, (int)nodeLayout.nodeType, pos, _tileSize);
 					_gridNodeInstances.Add(gridNode);
 
@@ -352,7 +364,8 @@ namespace Glazman.Shapeshift
 					
 					// if (itemType >= 0)	// HACK: load all items, even if they are invalid. this makes the level editor easier to use
 					{
-						var gridItem = Instantiate(_gridItemPrefab, _playfieldTransform);
+						//var gridItem = Instantiate(_gridItemPrefab, _playfieldTransform);
+						var gridItem = PrefabPool.Get<GridItemView>(_playfieldTransform);
 						gridItem.Configure(x, y, itemType, pos, _tileSize);
 						_gridItemInstances.Add(gridItem);
 					}
@@ -374,7 +387,10 @@ namespace Glazman.Shapeshift
 			for (int i = 0; i < _gridNodeInstances.Count; i++)
 			{
 				if (_gridNodeInstances[i] != null)
-					Destroy(_gridNodeInstances[i].gameObject);
+				{
+					//Destroy(_gridNodeInstances[i].gameObject);
+					PrefabPool.Return(_gridNodeInstances[i]);
+				}
 			}
 			_gridNodeInstances.Clear();
 		}
@@ -384,7 +400,10 @@ namespace Glazman.Shapeshift
 			for (int i = 0; i < _gridItemInstances.Count; i++)
 			{
 				if (_gridItemInstances[i] != null)
-					Destroy(_gridItemInstances[i].gameObject);
+				{
+					//Destroy(_gridItemInstances[i].gameObject);
+					PrefabPool.Return(_gridItemInstances[i]);
+				}
 			}
 			_gridItemInstances.Clear();
 		}

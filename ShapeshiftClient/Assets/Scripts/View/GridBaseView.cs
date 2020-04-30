@@ -7,9 +7,19 @@ using UnityEngine.UI;
 
 namespace Glazman.Shapeshift
 {
-	public abstract class GridBaseView : MonoBehaviour
+	public abstract class GridBaseView : MonoBehaviour, IPooledObject
 	{
 		protected abstract string GetSpriteResourceName();
+
+		public void OnReturnToPool()
+		{
+			SetType(-1);
+		}
+
+		public GameObject GetGameObject()
+		{
+			return gameObject;
+		}
 
 		[SerializeField] private RectTransform _rectTransform = null;
 		[SerializeField] private Image _image = null;
@@ -22,7 +32,7 @@ namespace Glazman.Shapeshift
 		public void Configure(int x, int y, int type, Vector3 position, float size)
 		{
 			Index = new GridIndex() { x = x,  y = y };
-			SetType(type);
+			SetType(type, true);
 			SetPosition(position);
 			SetSize(size);
 			SetSelected(false);
