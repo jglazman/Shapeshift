@@ -116,7 +116,7 @@ namespace Glazman.Shapeshift
 			}
 			catch (System.Exception e)
 			{
-				Logger.LogError($"Failed to deserialize level config json: {json}");
+				Logger.LogError($"Failed to deserialize level config json: {json}: {e.Message}");
 				return null;
 			}
 		}

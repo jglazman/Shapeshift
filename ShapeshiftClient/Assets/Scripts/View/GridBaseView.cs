@@ -13,7 +13,7 @@ namespace Glazman.Shapeshift
 
 		[SerializeField] private RectTransform _rectTransform = null;
 		[SerializeField] private Image _image = null;
-		[SerializeField] private GameObject _rootSelected;
+		[SerializeField] private GameObject _rootSelected = null;
 
 		public GridIndex Index { get; private set; }
 		public int Type { get; private set; }

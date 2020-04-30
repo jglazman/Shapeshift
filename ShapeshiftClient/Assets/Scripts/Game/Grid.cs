@@ -31,12 +31,32 @@ namespace Glazman.Shapeshift
 		}
 	}
 
-	// [Serializable]
-	// public struct GridItem
-	// {
-	// 	public GridIndex index;
-	// 	public int itemType;
-	// }
+	public enum CauseOfDeath
+	{
+		Undefined = 0,
+		Matched
+	}
+
+	/// <summary>The payload for grid events.</summary>
+	public class GridEventItem
+	{
+		public GridIndex? ReferenceIndex { get; protected set; }
+		public GridIndex Index { get; protected set; }
+		public int ItemType { get; protected set; }
+		public int Points { get; protected set; }
+
+		public static GridEventItem Create(GridNodeState nodeState, int points=0, GridIndex? refIndex=null)
+		{
+			var item = new GridEventItem()
+			{
+				ReferenceIndex = refIndex,
+				Index = nodeState.index,
+				ItemType = nodeState.itemType,
+				Points = points
+			};
+			return item;
+		}
+	}
 	
 	/// <summary>The initial setup of a grid node.</summary>
 	[Serializable]
@@ -58,7 +78,23 @@ namespace Glazman.Shapeshift
 		{
 			index = new GridIndex() { x = x, y = y };
 		}
-		
+
+		public bool IsEmpty()
+		{
+			return nodeType == GridNodeType.Open && itemType <= 0;
+		}
+
+		public bool TryRandomizeItemType()
+		{
+			if (nodeType == GridNodeType.Open)
+			{
+				itemType = GetRandomItemType();
+				return true;
+			}
+
+			return false;
+		}
+
 		public static GridNodeState CreateFromLayout(int x, int y, GridNodeLayout nodeLayout)
 		{
 			var itemState = new GridNodeState(x, y)
@@ -74,18 +110,7 @@ namespace Glazman.Shapeshift
 
 			return itemState;
 		}
-
-		public bool TryRandomizeItemType()
-		{
-			if (nodeType == GridNodeType.Open)
-			{
-				itemType = GetRandomItemType();
-				return true;
-			}
-
-			return false;
-		}
-
+		
 		private static int GetRandomItemType()
 		{
 			return UnityEngine.Random.Range(1, GridItemView.NumItemTypes);

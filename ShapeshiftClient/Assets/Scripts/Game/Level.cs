@@ -35,12 +35,13 @@ namespace Glazman.Shapeshift
 				{
 					if (_levelState.IsValidMatch((command as SubmitMatchCommand)?.SelectedItems, out var matchedItems))
 					{
-						var events = _levelState.HandleMatchSuccess(matchedItems);
+						var matchEvents = new List<Event>() { new MatchSuccessEvent() };
 						
-						BroadcastEvent(new MatchSuccessEvent());
-						
-						foreach (var matchEvent in events)
-							BroadcastEvent(matchEvent);
+						// remove the matched items and fix the grid
+						var gridUpdateEvents = _levelState.RemoveGridItems(CauseOfDeath.Matched, matchedItems);
+						matchEvents.AddRange(gridUpdateEvents);
+
+						BroadcastEvents(matchEvents);
 					}
 					else
 					{

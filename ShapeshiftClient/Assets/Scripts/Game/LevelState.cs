@@ -14,6 +14,7 @@ namespace Glazman.Shapeshift
 		public int Width { get; }
 		public int Height { get; }
 		public GridNodeState[,] Grid { get; } // TODO: a generic "MultidimensionalList" container would be nice
+		public int Points { get; protected set; }
 
 		public LevelState(int levelIndex, LevelConfig config)
 		{
@@ -105,27 +106,54 @@ namespace Glazman.Shapeshift
 
 			return true;
 		}
-		
-		
-		public List<Level.Event> HandleMatchSuccess(List<GridNodeState> matchedItems)
+
+		private bool UpdateGridState(ref List<Level.Event> gridUpdateEvents)
 		{
-			var gridEvents = new List<Level.Event>();
-					
-			// take a snapshot of the items to be removed
-			var itemsMatchedEvent = new Level.ItemsMatchedEvent(matchedItems);
-			gridEvents.Add(itemsMatchedEvent);
-			// remove the items
-			foreach (var item in matchedItems)
+			// pull items down
+			bool didUpdate = PullDownGridItems(ref gridUpdateEvents);
+		
+			// create new items
+			if (DropInGridItems(ref gridUpdateEvents))
+				didUpdate = true;
+			
+			return didUpdate;
+		}
+
+		public List<Level.Event> RemoveGridItems(CauseOfDeath reason, List<GridNodeState> itemsToRemove)
+		{
+			List<Level.Event> gridUpdateEvents = new List<Level.Event>();
+		
+			// record the event
+			var destroyedEvent = new Level.ItemsDestroyedEvent(reason, itemsToRemove);
+			gridUpdateEvents.Add(destroyedEvent);
+			
+			// score
+			Points += destroyedEvent.Points;
+			
+			// remove the items from the grid
+			foreach (var item in itemsToRemove)
 				item.itemType = -1;
 
-			// drop new items into place and take snapshots along the way
-			var itemsFallEvent = new Level.ItemsFallIntoPlaceEvent();
+			// fix the grid until it ain't broke no more
+			bool didUpdate;
+			do
+			{
+				didUpdate = UpdateGridState(ref gridUpdateEvents);
+			} while (didUpdate);
+			
+			return gridUpdateEvents;
+		}
+
+		private bool PullDownGridItems(ref List<Level.Event> gridUpdateEvents)
+		{
+			var movedItems = new List<GridEventItem>();
+			
 			for (int x = 0; x < Width; x++)
 			{
 				for (int y = 0; y < Height; y++)
 				{
 					// TODO: more advanced falling rules (e.g. move around closed nodes)
-							
+
 					// pull items down to fill the empty nodes
 					var node = Grid[x, y];
 					if (node.nodeType == GridNodeType.Open && node.itemType <= 0)
@@ -134,35 +162,52 @@ namespace Glazman.Shapeshift
 						var aboveFilledNode = FindFirstFilledNodeAbove(x, y);
 						if (aboveFilledNode != null)
 						{
-							// snapshot
-							var moved = new Level.ItemMovedEvent(aboveFilledNode.index, node.index, aboveFilledNode.itemType);
-							itemsFallEvent.MovedItems.Add(moved);
-									
 							// pull the item down
 							node.itemType = aboveFilledNode.itemType;
 							aboveFilledNode.itemType = -1;
-						}
-						else
-						{
-							// no items above us. create new items to fill the column.
-							for (int yFill = y; yFill < Height; yFill++)
-							{
-								// create random new items
-								var fillNode = Grid[x, yFill];
-								if (fillNode.TryRandomizeItemType())
-								{
-									// snapshot
-									var created = new Level.ItemCreatedEvent(fillNode.index, fillNode.itemType);
-									itemsFallEvent.CreatedItems.Add(created);
-								}
-							}
+							
+							// record the event
+							var movedItem = GridEventItem.Create(node, 0, aboveFilledNode.index);
+							movedItems.Add(movedItem);
 						}
 					}
 				}
 			}
-			gridEvents.Add(itemsFallEvent);
 
-			return gridEvents;
+			if (movedItems.Count > 0)
+			{
+				var itemsMovedEvent = new Level.ItemsMovedEvent(movedItems);
+				gridUpdateEvents.Add(itemsMovedEvent);
+				return true;
+			}
+
+			return false;
+		}
+		
+		private bool DropInGridItems(ref List<Level.Event> gridUpdateEvents)
+		{
+			var createdItems = new List<GridNodeState>();
+
+			int yTop = Height - 1;
+			for (int x = 0; x < Width; x++)
+			{
+				// create randomized items at each empty node in the top row
+				var node = Grid[x, yTop];
+				if (node.IsEmpty() && node.TryRandomizeItemType())
+				{
+					// record the event
+					createdItems.Add(node);
+				}
+			}
+
+			if (createdItems.Count > 0)
+			{
+				var itemsCreatedEvent = new Level.ItemsCreatedEvent(createdItems);
+				gridUpdateEvents.Add(itemsCreatedEvent);
+				return true;
+			}
+
+			return false;
 		}
 	}
 }

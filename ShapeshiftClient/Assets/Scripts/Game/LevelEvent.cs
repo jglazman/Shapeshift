@@ -8,7 +8,7 @@ namespace Glazman.Shapeshift
 {
 	public static partial class Level
 	{
-		public delegate void LevelEventDelegate(Event levelEvent);
+		public delegate void LevelEventDelegate(IEnumerable<Event> levelEvents);
 
 		private static event LevelEventDelegate _eventListeners;
 		
@@ -24,9 +24,13 @@ namespace Glazman.Shapeshift
 
 		private static void BroadcastEvent(Event levelEvent)
 		{
-			_eventListeners?.Invoke(levelEvent);
+			BroadcastEvents(new List<Event>() {levelEvent});
 		}
 		
+		private static void BroadcastEvents(IEnumerable<Event> levelEvents)
+		{
+			_eventListeners?.Invoke(levelEvents);
+		}
 		
 		
 		public enum EventType
@@ -37,11 +41,9 @@ namespace Glazman.Shapeshift
 			Lose,
 			MatchSuccess,
 			MatchRejected,
-			ItemsMatched,
-			ItemsFallIntoPlace,
-			ItemCreated,
-			ItemMoved,
-			ItemDestroyed
+			ItemsCreated,
+			ItemsMoved,
+			ItemsDestroyed
 		}
 
 		public abstract class Event
@@ -49,6 +51,9 @@ namespace Glazman.Shapeshift
 			public abstract EventType EventType { get; }
 			
 			//public readonly Payload Payload = new Payload();
+
+			/// <summary>Any event can generate points.</summary>
+			public int Points { get; protected set; }
 		}
 
 		public class LoadLevelEvent : Event
@@ -105,74 +110,53 @@ namespace Glazman.Shapeshift
 		{
 			public override EventType EventType { get { return EventType.MatchRejected; } }
 		}
-		
-		public class ItemsMatchedEvent : Event
+
+		public class ItemsCreatedEvent : Event
 		{
-			public override EventType EventType { get { return EventType.ItemsMatched; } }
+			public override EventType EventType { get { return EventType.ItemsCreated; } }
 
-			public List<ItemDestroyedEvent> MatchedItems { get; }
-
-			public ItemsMatchedEvent(List<GridNodeState> nodes)
-			{
-				MatchedItems = new List<ItemDestroyedEvent>(nodes.Count);
-
-				foreach (var node in nodes)
-				{
-					var destroyedItem = new ItemDestroyedEvent(node.index, node.itemType);
-					MatchedItems.Add(destroyedItem);
-				}
-			}
-		}
-
-		public class ItemsFallIntoPlaceEvent : Event
-		{
-			public override EventType EventType { get { return EventType.ItemsFallIntoPlace; } }
-
-			public List<ItemMovedEvent> MovedItems = new List<ItemMovedEvent>();
-			public List<ItemCreatedEvent> CreatedItems = new List<ItemCreatedEvent>();
-		}
-
-		public class ItemCreatedEvent : Event
-		{
-			public override EventType EventType { get { return EventType.ItemCreated; } }
+			public List<GridEventItem> CreatedItems { get; }
 			
-			public GridIndex Index { get; }
-			public int ItemType { get; }
-
-			public ItemCreatedEvent(GridIndex index, int itemType)
+			public ItemsCreatedEvent(List<GridNodeState> createdItems)
 			{
-				ItemType = itemType;
-				Index = index;
+				CreatedItems = new List<GridEventItem>(createdItems.Count);
+
+				foreach (var item in createdItems)
+					CreatedItems.Add(GridEventItem.Create(item));
 			}
 		}
 		
-		public class ItemMovedEvent : Event
+		public class ItemsMovedEvent : Event
 		{
-			public override EventType EventType { get { return EventType.ItemMoved; } }
+			public override EventType EventType { get { return EventType.ItemsMoved; } }
 
-			public GridIndex SourceIndex { get; }
-			public GridIndex DestIndex { get; }
-			public int ItemType { get; }
+			public List<GridEventItem> MovedItems { get; }
 
-			public ItemMovedEvent(GridIndex source, GridIndex destination, int itemType)
+			public ItemsMovedEvent(List<GridEventItem> movedItems)
 			{
-				SourceIndex = source;
-				DestIndex = destination;
-				ItemType = itemType;
+				MovedItems = new List<GridEventItem>(movedItems);
 			}
 		}
-		
-		public class ItemDestroyedEvent : Event
+
+		public class ItemsDestroyedEvent : Event
 		{
-			public override EventType EventType { get { return EventType.ItemDestroyed; } }
+			public override EventType EventType { get { return EventType.ItemsDestroyed; } }
 
-			public GridIndex Index { get; }
-			public int ItemType { get; }
-
-			public ItemDestroyedEvent(GridIndex index, int itemType)
+			public CauseOfDeath Reason { get; }
+			public List<GridEventItem> DestroyedItems { get; }
+			
+			public ItemsDestroyedEvent(CauseOfDeath reason, List<GridNodeState> destroyedItems)
 			{
-				ItemType = itemType;
-				Index = index;
+				Reason = reason;
+				DestroyedItems = new List<GridEventItem>(destroyedItems.Count);
+
+				for (int i = 0; i < destroyedItems.Count; i++)
+				{
+					int points = 100 + (25 * i);	// TODO: data-driven scoring
+					var item = GridEventItem.Create(destroyedItems[i], points);
+					DestroyedItems.Add(item);
+					Points += points;	// total points
+				}
 			}
 		}
 	}

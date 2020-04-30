@@ -44,13 +44,13 @@ namespace Glazman.Shapeshift
 
 		private void Awake()
 		{
-			Level.ListenForLevelEvents(ReceiveLevelEvent);
+			Level.ListenForLevelEvents(ReceiveLevelEvents);
 			DisableEditMode();
 		}
 
 		private void OnDestroy()
 		{
-			Level.StopListeningForLevelEvents(ReceiveLevelEvent);
+			Level.StopListeningForLevelEvents(ReceiveLevelEvents);
 			SpriteResource.ClearCache();
 		}
 
@@ -113,9 +113,10 @@ namespace Glazman.Shapeshift
 		}
 		
 		
-		private void ReceiveLevelEvent(Level.Event levelEvent)
+		private void ReceiveLevelEvents(IEnumerable<Level.Event> levelEvents)
 		{
-			_pendingEvents.Enqueue(levelEvent);
+			foreach (var levelEvent in levelEvents)
+				_pendingEvents.Enqueue(levelEvent);
 		}
 
 		private bool HandlePendingEvents()
@@ -124,7 +125,7 @@ namespace Glazman.Shapeshift
 			{
 				SetState(State.ExecutingEvent);
 				
-				while (_pendingEvents.Count > 0)
+				// while (_pendingEvents.Count > 0)	// TODO: one per frame while debugging
 					HandleLevelEvent(_pendingEvents.Dequeue());
 
 				// TODO: multi-frame handling of events (animations, etc.)
@@ -168,76 +169,55 @@ namespace Glazman.Shapeshift
 					DeselectAllGridItems();
 				} break;
 
-				case Level.EventType.ItemsMatched:
+				case Level.EventType.ItemsCreated:
 				{
-					var itemsMatchedEvent = levelEvent as Level.ItemsMatchedEvent;
-					
-					foreach (var destroyedItemEvent in itemsMatchedEvent.MatchedItems)
-						HandleGridEvent(destroyedItemEvent);
+					var itemsCreatedEvent = levelEvent as Level.ItemsCreatedEvent;
+
+					foreach (var createdItem in itemsCreatedEvent.CreatedItems)
+					{
+						var gridItem = TryGetGridItem(createdItem.Index);
+						Assert.IsNotNull(gridItem);
+						Assert.IsTrue(gridItem.ItemType == -1);
+
+						gridItem.SetType(createdItem.ItemType, true);
+					}
+				} break;
+
+				case Level.EventType.ItemsMoved:
+				{
+					var itemsMovedEvent = levelEvent as Level.ItemsMovedEvent;
+
+					foreach (var movedItem in itemsMovedEvent.MovedItems)
+					{
+						var sourceItem = TryGetGridItem(movedItem.ReferenceIndex.Value);
+						Assert.IsNotNull(sourceItem);
+						Assert.IsTrue(sourceItem.ItemType == movedItem.ItemType);
+
+						var destItem = TryGetGridItem(movedItem.Index);
+						Assert.IsNotNull(destItem);
+						Assert.IsTrue(destItem.ItemType == -1);
+
+						sourceItem.SetType(-1);
+						destItem.SetType(movedItem.ItemType, true);
+					}
 				} break;
 				
-				case Level.EventType.ItemsFallIntoPlace:
+				case Level.EventType.ItemsDestroyed:
 				{
-					var itemsFallEvent = levelEvent as Level.ItemsFallIntoPlaceEvent;
-					
-					foreach (var movedItemEvent in itemsFallEvent.MovedItems)
-						HandleGridEvent(movedItemEvent);
-					
-					foreach (var createdItemEvent in itemsFallEvent.CreatedItems)
-						HandleGridEvent(createdItemEvent);
+					var itemsDestroyedEvent = levelEvent as Level.ItemsDestroyedEvent;
+
+					foreach (var destroyedItem in itemsDestroyedEvent.DestroyedItems)
+					{
+						var gridItem = TryGetGridItem(destroyedItem.Index);
+						Assert.IsNotNull(gridItem);
+						Assert.IsTrue(gridItem.ItemType > 0);
+
+						gridItem.SetType(-1, true);
+					}
 				} break;
 				
 				default:
 					Logger.LogError($"Unhandled level event: {levelEvent.EventType}");
-					break;
-			}
-		}
-
-		// TODO: these 'sub-events' are handled separately to avoid recursion. these event types could be subclassed instead, or handled some other way.
-		private void HandleGridEvent(Level.Event gridEvent)
-		{
-			switch (gridEvent.EventType)
-			{
-				case Level.EventType.ItemCreated:
-				{
-					var itemCreatedEvent = gridEvent as Level.ItemCreatedEvent;
-					
-					var gridItem = TryGetGridItem(itemCreatedEvent.Index);
-					Assert.IsNotNull(gridItem);
-					Assert.IsTrue(gridItem.ItemType == -1);
-					
-					gridItem.SetType(itemCreatedEvent.ItemType, true);
-				} break;
-
-				case Level.EventType.ItemMoved:
-				{
-					var itemMovedEvent = gridEvent as Level.ItemMovedEvent;
-					
-					var sourceItem = TryGetGridItem(itemMovedEvent.SourceIndex);
-					Assert.IsNotNull(sourceItem);
-					Assert.IsTrue(sourceItem.ItemType == itemMovedEvent.ItemType);
-					
-					var destItem = TryGetGridItem(itemMovedEvent.DestIndex);
-					Assert.IsNotNull(destItem);
-					Assert.IsTrue(destItem.ItemType == -1);
-					
-					sourceItem.SetType(-1);
-					destItem.SetType(itemMovedEvent.ItemType, true);
-				} break;
-				
-				case Level.EventType.ItemDestroyed:
-				{
-					var itemDestroyedEvent = gridEvent as Level.ItemDestroyedEvent;
-					
-					var gridItem = TryGetGridItem(itemDestroyedEvent.Index);
-					Assert.IsNotNull(gridItem);
-					Assert.IsTrue(gridItem.ItemType > 0);
-					
-					gridItem.SetType(-1, true);
-				} break;
-				
-				default:
-					Logger.LogError($"Unhandled grid event: {gridEvent.EventType}");
 					break;
 			}
 		}
