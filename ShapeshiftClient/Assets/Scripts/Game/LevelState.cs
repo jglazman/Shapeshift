@@ -33,7 +33,7 @@ namespace Glazman.Shapeshift
 				Grid = new GridNodeState[config.width, config.height];
 				for (int y = 0; y < config.height; y++)
 					for (int x = 0; x < config.width; x++)
-						Grid[x, y] = GridNodeState.CreateFromLayout(x, y, config.GetNodeLayout(x, y));
+						Grid[x, y] = GridNodeState.CreateFromLayout(x, y, config.GetNodeLayout(x, y), config.maxItemTypes);
 			}
 		}
 
@@ -157,7 +157,6 @@ namespace Glazman.Shapeshift
 
 				// make the move
 				var gridUpdateEvents = RemoveGridItems(CauseOfDeath.Matched, matchedItems);
-				matchEvents.AddRange(gridUpdateEvents);
 				
 				// score the move
 				int pointsDelta = 0;
@@ -168,6 +167,9 @@ namespace Glazman.Shapeshift
 				Moves++;
 				
 				matchEvents.Add(new Level.UpdateScoreEvent(Moves, 1, Points, pointsDelta));
+
+				// put the match events after the score so we can see the score first
+				matchEvents.AddRange(gridUpdateEvents);
 
 				// check for end of level
 				if (CheckEndOfLevel())
@@ -350,7 +352,7 @@ namespace Glazman.Shapeshift
 			{
 				// create randomized items at each empty node in the top row
 				var node = Grid[x, yTop];
-				if (node.IsEmpty() && node.TryRandomizeItemType())
+				if (node.IsEmpty() && node.TryRandomizeItemType(Config.maxItemTypes))
 				{
 					// record the event
 					createdItems.Add(node);

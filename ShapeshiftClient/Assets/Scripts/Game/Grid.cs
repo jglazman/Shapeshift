@@ -89,18 +89,18 @@ namespace Glazman.Shapeshift
 			return nodeType == GridNodeType.Open && itemType > 0;
 		}
 
-		public bool TryRandomizeItemType()
+		public bool TryRandomizeItemType(int maxItemTypes)
 		{
 			if (nodeType == GridNodeType.Open)
 			{
-				itemType = GetRandomItemType();
+				itemType = GetRandomItemType(maxItemTypes);
 				return true;
 			}
 
 			return false;
 		}
 
-		public static GridNodeState CreateFromLayout(int x, int y, GridNodeLayout nodeLayout)
+		public static GridNodeState CreateFromLayout(int x, int y, GridNodeLayout nodeLayout, int maxItemTypes)
 		{
 			var itemState = new GridNodeState(x, y)
 			{
@@ -109,16 +109,16 @@ namespace Glazman.Shapeshift
 
 			// choose the initial item state
 			if (nodeLayout.itemType == 0)
-				itemState.itemType = GetRandomItemType();
+				itemState.itemType = GetRandomItemType(maxItemTypes);
 			else
 				itemState.itemType = nodeLayout.itemType;
 
 			return itemState;
 		}
 		
-		private static int GetRandomItemType()
+		private static int GetRandomItemType(int maxItemTypes)
 		{
-			return UnityEngine.Random.Range(1, GridItemView.NumItemTypes);
+			return UnityEngine.Random.Range(1, Mathf.Min(maxItemTypes + 1, GridItemView.NumItemTypes));
 		}
 	}
 }

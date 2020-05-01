@@ -33,8 +33,8 @@ namespace Glazman.Shapeshift
 		{
 			if (animEvent.key == STARS_KEY && animEvent.value == _numStars)
 			{
-				// TODO: this was a quick hack to splice some animations togther
-				float delay = _numStars == 3 ? 1.3f : 0.5f;
+				// TODO: this was a quick hack to splice some animations together
+				float delay = _numStars == 3 ? 1.3f : 0.7f;
 				CoroutineRunner.WaitSecondsThenRun(delay, () =>
 				{
 					animator.StopPlayback();
@@ -50,7 +50,7 @@ namespace Glazman.Shapeshift
 			_scoreText.text = $"{winEvent.Points:n0}";
 			_movesText.text = $"{winEvent.Moves}";
 			_bestScore.SetActive(winEvent.Points >= winEvent.BestPoints);
-			_bestMoves.SetActive(winEvent.Moves <= winEvent.BestMoves);
+			_bestMoves.SetActive(winEvent.Moves < winEvent.BestMoves);
 
 			_starsAnimator.SetInteger(StarsInteger, winEvent.Stars);
 		}

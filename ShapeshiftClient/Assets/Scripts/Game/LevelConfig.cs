@@ -32,6 +32,8 @@ namespace Glazman.Shapeshift
 		public int width;
 		public int height;
 		public GridNodeLayout[] layout;  // Unity can't serialize a multidimensional array, so let's emulate one
+
+		public int maxItemTypes;
 		
 		public LevelGoalType goalType;
 		public int goal1;
@@ -95,6 +97,7 @@ namespace Glazman.Shapeshift
 				width = width,
 				height = height,
 				layout = new GridNodeLayout[width * height],
+				maxItemTypes = GridItemView.NumItemTypes - 1,
 				goalType = LevelGoalType.Points,
 				goal1 = 1000,
 				goal2 = 3000,

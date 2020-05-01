@@ -10,7 +10,7 @@ namespace Glazman.Shapeshift
 	public class GridItemView : GridBaseView
 	{
 		// TODO: this should be data-driven
-		private static readonly int MoveActionTweenId = TweenConfig.ConvertGuidToId("Linear");
+		private static readonly int MoveActionTweenId = TweenConfig.ConvertGuidToId("EaseIn");
 		
 		// TODO: this should be data-driven
 		public static int NumItemTypes => 6;
@@ -38,9 +38,17 @@ namespace Glazman.Shapeshift
 		}
 
 
-		public void DoCreateAction(int itemType)
+		public void DoCreateAction(int itemType, float speed)
 		{
 			SetType(itemType, true);
+
+			// TODO: FX when the item is created. for now just spawn it above the top of the board.
+			var endPos = transform.localPosition;
+			var startPos = endPos;
+			startPos.y += Size;
+			transform.localPosition = startPos;
+
+			DoMoveAction(endPos, speed);
 		}
 
 		public void DoMoveAction(Vector3 destination, float speed)

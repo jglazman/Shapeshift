@@ -165,7 +165,14 @@ namespace Glazman.Shapeshift
 			if (_pendingEvents.Count > 0)
 			{
 				SetState(State.ExecutingEvent);
-				HandleLevelEvent(_pendingEvents.Dequeue());
+
+				Level.Event levelEvent;
+				do
+				{
+					levelEvent = _pendingEvents.Dequeue();
+					HandleLevelEvent(levelEvent);
+				} while (_pendingEvents.Count > 0 && levelEvent.EventType == Level.EventType.ItemsMoved); // pack move events together for more fluid gameplay.
+				
 				return true;
 			}
 
@@ -216,12 +223,14 @@ namespace Glazman.Shapeshift
 				{
 					var itemsCreatedEvent = levelEvent as Level.ItemsCreatedEvent;
 					
+					float speed = GridItemSpeed;
+					
 					foreach (var createdItem in itemsCreatedEvent.CreatedItems)
 					{
 						Assert.IsNull(TryGetGridItem(createdItem.Index));
 						
 						var gridItem = CreateGridItemView(createdItem.Index, createdItem.ItemType);
-						gridItem.DoCreateAction(createdItem.ItemType);
+						gridItem.DoCreateAction(createdItem.ItemType, speed);
 					}
 				} break;
 
@@ -248,7 +257,7 @@ namespace Glazman.Shapeshift
 				{
 					var itemsSwappedEvent = levelEvent as Level.ItemsSwappedEvent;
 
-					float speed = GridItemSpeed;
+					float speed = GridItemSpeed * 2f;	// speed up the swap animation
 
 					foreach (var swappedItem in itemsSwappedEvent.SwappedItems)
 					{
@@ -554,6 +563,7 @@ namespace Glazman.Shapeshift
 		[SerializeField] private GameObject _editModePanel = null;
 		[SerializeField] private TMP_InputField _editModeInputWidth = null;
 		[SerializeField] private TMP_InputField _editModeInputHeight = null;
+		[SerializeField] private TMP_InputField _editModeInputMaxItemTypes = null;
 		[SerializeField] private TMP_InputField _editModeInputGoal1 = null;
 		[SerializeField] private TMP_InputField _editModeInputGoal2 = null;
 		[SerializeField] private TMP_InputField _editModeInputGoal3 = null;
@@ -632,6 +642,9 @@ namespace Glazman.Shapeshift
 				
 				_levelConfig.SetNodeLayout(gridNode.Index, nodeLayout);
 			}
+			
+			if (int.TryParse(_editModeInputMaxItemTypes.text, out var tiles))
+				_levelConfig.maxItemTypes = Mathf.Max(0, tiles);
 
 			if (int.TryParse(_editModeInputGoal1.text, out var goal1))
 				_levelConfig.goal1 = Mathf.Max(0, goal1);
@@ -681,6 +694,7 @@ namespace Glazman.Shapeshift
 			// init the editor controls
 			_editModeInputWidth.text = _levelConfig.width.ToString();
 			_editModeInputHeight.text = _levelConfig.height.ToString();
+			_editModeInputMaxItemTypes.text = _levelConfig.maxItemTypes.ToString();
 			_editModeInputGoal1.text = _levelConfig.goal1.ToString();
 			_editModeInputGoal2.text = _levelConfig.goal2.ToString();
 			_editModeInputGoal3.text = _levelConfig.goal3.ToString();
