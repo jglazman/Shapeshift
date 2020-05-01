@@ -1222,6 +1222,7 @@ MonoBehaviour:
   _tallyAnimation: {fileID: 6105331456616462713}
   _scoreText: {fileID: 1183904868160572396}
   _movesText: {fileID: 3775311785929473422}
+  _winText: {fileID: 5702536428513360731}
   _bestScore: {fileID: 4977925270975322561}
   _bestMoves: {fileID: 6055507826242383681}
 --- !u!223 &4927193261409055282
@@ -1683,7 +1684,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 18}
-  m_SizeDelta: {x: -160, y: 89.599976}
+  m_SizeDelta: {x: -120, y: 89.599976}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8192085249042378119
 CanvasRenderer:
@@ -1739,12 +1740,12 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 74.3
+  m_fontSize: 72
   m_fontSizeBase: 74.3
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
-  m_fontSizeMax: 100
+  m_fontSizeMax: 72
   m_fontStyle: 1
   m_textAlignment: 514
   m_characterSpacing: 0
@@ -1753,7 +1754,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_enableWordWrapping: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_firstOverflowCharacterIndex: -1

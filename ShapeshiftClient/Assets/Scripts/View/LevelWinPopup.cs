@@ -18,6 +18,7 @@ namespace Glazman.Shapeshift
 		[SerializeField] private Animation _tallyAnimation = null;
 		[SerializeField] private TextMeshProUGUI _scoreText = null;
 		[SerializeField] private TextMeshProUGUI _movesText = null;
+		[SerializeField] private TextMeshProUGUI _winText = null;
 		[SerializeField] private GameObject _bestScore = null;
 		[SerializeField] private GameObject _bestMoves = null;
 
@@ -34,7 +35,7 @@ namespace Glazman.Shapeshift
 			if (animEvent.key == STARS_KEY && animEvent.value == _numStars)
 			{
 				// TODO: this was a quick hack to splice some animations together
-				float delay = _numStars == 3 ? 1.3f : 0.7f;
+				float delay = _numStars == 3 ? 1.3f : _numStars == 2 ? 0.7f : 0.6f;
 				CoroutineRunner.WaitSecondsThenRun(delay, () =>
 				{
 					animator.StopPlayback();
@@ -53,6 +54,13 @@ namespace Glazman.Shapeshift
 			_bestMoves.SetActive(winEvent.Moves < winEvent.BestMoves);
 
 			_starsAnimator.SetInteger(StarsInteger, winEvent.Stars);
+
+			if (winEvent.Stars == 1)
+				_winText.text = "NO MOVES LEFT!";
+			else if (winEvent.Stars == 2)
+				_winText.text = "AMAZING!";
+			else
+				_winText.text = "YOU WIN!";
 		}
 		
 		
