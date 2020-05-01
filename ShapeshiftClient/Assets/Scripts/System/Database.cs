@@ -7,6 +7,11 @@ using UnityEngine.Assertions;
 
 namespace Glazman.Shapeshift
 {
+	public interface IDefaultData
+	{
+		void Reset(string ident);
+	}
+	
 	public static class Database
 	{
 		/// <summary>Wrapper for data object persistence.</summary>
@@ -93,9 +98,21 @@ namespace Glazman.Shapeshift
 				Assert.IsTrue(typeof(T).IsSerializable, $"[Database] Tried to load a non-serializable type={typeof(T)}, guid={data.Key}");
 
 				if (!string.IsNullOrEmpty(json))
+				{
 					data.Value = Deserialize<T>(json);
-				// TODO: else load designer default data for this data structure?
-				
+				}
+				else
+				{
+					data.Value = default;
+
+					var defaultValue = data.Value as IDefaultData;
+					if (defaultValue != null)
+					{
+						defaultValue.Reset(ident);
+						data.Value = (T)defaultValue;
+					}
+				}
+
 				return data;
 			}
 			catch (System.Exception e)

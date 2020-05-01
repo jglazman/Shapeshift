@@ -3110,6 +3110,7 @@ MonoBehaviour:
   _gridItemPrefab: {fileID: 6618377336835280926, guid: 42d27dd850ceb4889978dd27c8e7e7da,
     type: 3}
   _levelScoreView: {fileID: 136508040}
+  _animationSpeedMultiplier: 2.8
   _editModePanel: {fileID: 1584286366}
   _editModeInputWidth: {fileID: 1151180742}
   _editModeInputHeight: {fileID: 1571745986}

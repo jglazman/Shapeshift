@@ -11,9 +11,20 @@ namespace Glazman.Shapeshift
 	{
 		public static string GetPathToGameObjectInScene(GameObject go)
 		{
-			string fullName = $"/{go.name}";
+			if (go == null)
+				return "<null>";
 			
-			Transform parent = go.transform.parent;
+			return GetPathToGameObjectInScene(go.transform);
+		}
+		
+		public static string GetPathToGameObjectInScene(Transform t)
+		{
+			if (t == null)
+				return "<null>";
+			
+			string fullName = $"/{t.name}";
+			
+			Transform parent = t.parent;
 			while (parent != null)
 			{
 				fullName = $"/{parent.name}{fullName}";

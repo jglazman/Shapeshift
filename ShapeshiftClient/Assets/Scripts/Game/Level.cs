@@ -59,12 +59,12 @@ namespace Glazman.Shapeshift
 
 		public static void Pause()
 		{
-			Logger.LogWarningEditor("TODO: pause the level");
+			Tween.Pause();
 		}
 
 		public static void Unpause()
 		{
-			Logger.LogWarningEditor("TODO: unpause the level");
+			Tween.Unpause();
 		}
 	}
 }

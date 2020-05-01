@@ -40,7 +40,7 @@ namespace Glazman.Shapeshift
 			SetType(type, true);
 		}
 
-		public void Invalidate()
+		public virtual void Invalidate()
 		{
 			SetType(-1);
 			SetGridIndex(-1, -1);

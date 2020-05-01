@@ -33,6 +33,7 @@ namespace Glazman.Shapeshift
 		[SerializeField] private GridNodeView _gridNodePrefab = null;
 		[SerializeField] private GridItemView _gridItemPrefab = null;
 		[SerializeField] private LevelScoreView _levelScoreView = null;
+		[SerializeField] private float _animationSpeedMultiplier = 2f;
 
 		private Queue<Level.Event> _pendingEvents = new Queue<Level.Event>();
 		private List<GridNodeView> _gridNodeInstances = new List<GridNodeView>();
@@ -43,7 +44,11 @@ namespace Glazman.Shapeshift
 		private float _tileSize;
 		private Vector3 _playfieldOrigin; // [0,0] = lower-left corner
 		private static bool _didCreatePools = false;
+		
+		private int AnimationSpeedSetting => Database.Load<SettingsData>((int)GameOptionType.Animation).Value.optionValue;
 
+		private float GridItemSpeed => AnimationSpeedSetting == 0 ? 0 : _tileSize * (4 - AnimationSpeedSetting) * _animationSpeedMultiplier;
+		
 		
 		public void Notify(TransitionState state)
 		{
@@ -106,7 +111,9 @@ namespace Glazman.Shapeshift
 
 				case State.ExecutingEvent:
 				{
-					// idle
+					// wait for actions to complete
+					if (_gridItemInstances.All(item => !item.IsBusy))
+						SetState(State.WaitingForInput);
 				} break;
 				
 				case State.EditMode:
@@ -155,17 +162,7 @@ namespace Glazman.Shapeshift
 			if (_pendingEvents.Count > 0)
 			{
 				SetState(State.ExecutingEvent);
-				
-				// while (_pendingEvents.Count > 0)	// TODO: one per frame while debugging
-					HandleLevelEvent(_pendingEvents.Dequeue());
-
-				// TODO: multi-frame handling of events (animations, etc.)
-				//SetState(State.WaitingForInput);
-				CoroutineRunner.WaitSecondsThenRun(0.2f, () =>
-				{
-					SetState(State.WaitingForInput);
-				});
-
+				HandleLevelEvent(_pendingEvents.Dequeue());
 				return true;
 			}
 
@@ -229,6 +226,8 @@ namespace Glazman.Shapeshift
 				{
 					var itemsMovedEvent = levelEvent as Level.ItemsMovedEvent;
 
+					float speed = GridItemSpeed;
+
 					foreach (var movedItem in itemsMovedEvent.MovedItems)
 					{
 						Assert.IsNull(TryGetGridItem(movedItem.Index));
@@ -238,13 +237,15 @@ namespace Glazman.Shapeshift
 						Assert.IsTrue(sourceItem.ItemType == movedItem.ItemType);
 						
 						sourceItem.SetGridIndex(movedItem.Index.x, movedItem.Index.y);
-						sourceItem.DoMoveAction(CalculateGridNodePosition(movedItem.Index));
+						sourceItem.DoMoveAction(CalculateGridNodePosition(movedItem.Index), speed);
 					}
 				} break;
 				
 				case Level.EventType.ItemsSwapped:
 				{
 					var itemsSwappedEvent = levelEvent as Level.ItemsSwappedEvent;
+
+					float speed = GridItemSpeed;
 
 					foreach (var swappedItem in itemsSwappedEvent.SwappedItems)
 					{
@@ -257,10 +258,10 @@ namespace Glazman.Shapeshift
 						Assert.IsTrue(sourceItem.ItemType > 0); // TODO: we can't verify the item type of the other node with this data structure.
 
 						sourceItem.SetGridIndex(swappedItem.Index);
-						sourceItem.DoMoveAction(CalculateGridNodePosition(swappedItem.Index));
+						sourceItem.DoMoveAction(CalculateGridNodePosition(swappedItem.Index), speed);
 						
 						destItem.SetGridIndex(swappedItem.ReferenceIndex.Value);
-						destItem.DoMoveAction(CalculateGridNodePosition(swappedItem.ReferenceIndex.Value));
+						destItem.DoMoveAction(CalculateGridNodePosition(swappedItem.ReferenceIndex.Value), speed);
 					}
 				} break;
 				
