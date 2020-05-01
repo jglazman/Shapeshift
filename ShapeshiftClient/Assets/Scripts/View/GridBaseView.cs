@@ -25,20 +25,39 @@ namespace Glazman.Shapeshift
 		[SerializeField] private Image _image = null;
 		[SerializeField] private GameObject _rootSelected = null;
 
-		public GridIndex Index { get; private set; }
+		private GridIndex _gridIndex;
+		
+		public GridIndex Index => _gridIndex;
 		public int Type { get; private set; }
 		public bool IsSelected { get; private set; }
 
 		public void Configure(int x, int y, int type, Vector3 position, float size)
 		{
-			Index = new GridIndex() { x = x,  y = y };
-			SetType(type, true);
+			SetGridIndex(x, y);
 			SetPosition(position);
 			SetSize(size);
 			SetSelected(false);
+			SetType(type, true);
+		}
+
+		public void Invalidate()
+		{
+			SetType(-1);
+			SetGridIndex(-1, -1);
+		}
+
+		public void SetGridIndex(GridIndex index)
+		{
+			SetGridIndex(index.x, index.y);
 		}
 		
-		public void SetType(int type, bool andEnable=false)
+		public void SetGridIndex(int x, int y)
+		{
+			_gridIndex.x = x;
+			_gridIndex.y = y;
+		}
+		
+		protected void SetType(int type, bool andEnable=false)
 		{
 			Type = type;
 
@@ -57,12 +76,17 @@ namespace Glazman.Shapeshift
 			}
 		}
 
-		public void SetPosition(Vector3 position)
+		public void EditMode_SetType(int type)
+		{
+			SetType(type, false);
+		}
+
+		protected void SetPosition(Vector3 position)
 		{
 			_rectTransform.localPosition = position;
 		}
 
-		public void SetSize(float size)
+		protected void SetSize(float size)
 		{
 			_rectTransform.sizeDelta = new Vector2(size, size);
 		}

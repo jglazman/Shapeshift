@@ -3,12 +3,10 @@
 //
 
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.UI;
 
 namespace Glazman.Shapeshift
 {
@@ -196,14 +194,13 @@ namespace Glazman.Shapeshift
 				case Level.EventType.ItemsCreated:
 				{
 					var itemsCreatedEvent = levelEvent as Level.ItemsCreatedEvent;
-
+					
 					foreach (var createdItem in itemsCreatedEvent.CreatedItems)
 					{
-						var gridItem = TryGetGridItem(createdItem.Index);
-						Assert.IsNotNull(gridItem);
-						Assert.IsTrue(gridItem.ItemType == -1);
-
-						gridItem.SetType(createdItem.ItemType, true);
+						Assert.IsNull(TryGetGridItem(createdItem.Index));
+						
+						var gridItem = CreateGridItemView(createdItem.Index, createdItem.ItemType);
+						gridItem.DoCreateAction(createdItem.ItemType);
 					}
 				} break;
 
@@ -213,16 +210,14 @@ namespace Glazman.Shapeshift
 
 					foreach (var movedItem in itemsMovedEvent.MovedItems)
 					{
+						Assert.IsNull(TryGetGridItem(movedItem.Index));
+						
 						var sourceItem = TryGetGridItem(movedItem.ReferenceIndex.Value);
 						Assert.IsNotNull(sourceItem);
 						Assert.IsTrue(sourceItem.ItemType == movedItem.ItemType);
-
-						var destItem = TryGetGridItem(movedItem.Index);
-						Assert.IsNotNull(destItem);
-						Assert.IsTrue(destItem.ItemType == -1);
-
-						sourceItem.SetType(-1);
-						destItem.SetType(movedItem.ItemType, true);
+						
+						sourceItem.SetGridIndex(movedItem.Index.x, movedItem.Index.y);
+						sourceItem.DoMoveAction(CalculateGridNodePosition(movedItem.Index));
 					}
 				} break;
 				
@@ -238,10 +233,13 @@ namespace Glazman.Shapeshift
 						
 						var destItem = TryGetGridItem(swappedItem.Index);
 						Assert.IsNotNull(destItem);
-						// TODO: we can't verify the item type of the other node with this data structure.
+						Assert.IsTrue(sourceItem.ItemType > 0); // TODO: we can't verify the item type of the other node with this data structure.
 
-						sourceItem.SetType(destItem.ItemType, true);
-						destItem.SetType(swappedItem.ItemType, true);
+						sourceItem.SetGridIndex(swappedItem.Index);
+						sourceItem.DoMoveAction(CalculateGridNodePosition(swappedItem.Index));
+						
+						destItem.SetGridIndex(swappedItem.ReferenceIndex.Value);
+						destItem.DoMoveAction(CalculateGridNodePosition(swappedItem.ReferenceIndex.Value));
 					}
 				} break;
 				
@@ -255,7 +253,18 @@ namespace Glazman.Shapeshift
 						Assert.IsNotNull(gridItem);
 						Assert.IsTrue(gridItem.ItemType > 0);
 
-						gridItem.SetType(-1, true);
+						switch (itemsDestroyedEvent.Reason)
+						{
+							case CauseOfDeath.Matched:
+							{
+								gridItem.DoMatchAction(destroyedItem.Points);
+							} break;
+
+							default:
+							{
+								gridItem.Invalidate();
+							} break;
+						}
 					}
 				} break;
 				
@@ -399,14 +408,31 @@ namespace Glazman.Shapeshift
 					
 					// if (itemType >= 0)	// HACK: load all items, even if they are invalid. this makes the level editor easier to use
 					{
-						//var gridItem = Instantiate(_gridItemPrefab, _playfieldTransform);
-						var gridItem = PrefabPool.Get<GridItemView>(_playfieldTransform);
-						gridItem.Configure(x, y, itemType, pos, _tileSize);
-						_gridItemInstances.Add(gridItem);
+						CreateGridItemView(x, y, itemType, pos);
 					}
 				}
 		}
 
+
+		private GridItemView CreateGridItemView(GridIndex index, int itemType)
+		{
+			return CreateGridItemView(index.x, index.y, itemType, CalculateGridNodePosition(index.x, index.y));
+		}
+
+		private GridItemView CreateGridItemView(int x, int y, int itemType, Vector3 position)
+		{
+			//var gridItem = Instantiate(_gridItemPrefab, _playfieldTransform);
+			var gridItem = PrefabPool.Get<GridItemView>(_playfieldTransform);
+			gridItem.Configure(x, y, itemType, position, _tileSize);
+			_gridItemInstances.Add(gridItem);
+			return gridItem;
+		}
+
+		private Vector3 CalculateGridNodePosition(GridIndex index)
+		{
+			return CalculateGridNodePosition(index.x, index.y);
+		}
+		
 		private Vector3 CalculateGridNodePosition(int x, int y)
 		{
 			return new Vector3(_playfieldOrigin.x + (x * _tileSize), _playfieldOrigin.y + (y * _tileSize));
@@ -456,7 +482,7 @@ namespace Glazman.Shapeshift
 
 		private GridItemView TryGetGridItem(GridIndex index)
 		{
-			return _gridItemInstances.FirstOrDefault(item => item.Index.x == index.x && item.Index.y == index.y);
+			return TryGetGridItem(index.x, index.y);
 		}
 
 		private GridItemView TryGetGridItem(int x, int y)
@@ -511,7 +537,7 @@ namespace Glazman.Shapeshift
 						if (itemType >= GridItemView.NumItemTypes)
 							itemType = 0; // loop around to 0=random
 					
-						gridItem.SetType(itemType);
+						gridItem.EditMode_SetType(itemType);
 					}
 				}
 				else
@@ -527,15 +553,15 @@ namespace Glazman.Shapeshift
 						if (nodeType >= GridNodeView.NumNodeTypes)
 							nodeType = 1; // loop around, but skip 0=Undefined
 					
-						gridNode.SetType(nodeType);
+						gridNode.EditMode_SetType(nodeType);
 
 						var gridItem = TryGetGridItem(gridNode.Index);
 						if (gridItem != null)
 						{
 							if (gridNode.NodeType == GridNodeType.Closed)
-								gridItem.SetType(-1);
+								gridItem.EditMode_SetType(-1);
 							else
-								gridItem.SetType(0);
+								gridItem.EditMode_SetType(0);
 						}
 					}
 				}

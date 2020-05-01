@@ -385,7 +385,13 @@ namespace Glazman.Shapeshift
 			for (int i = 0; i < count; i++)
 			{
 				var node1 = filledNodes[i];
-				var node2 = filledNodes[Random.Range(0, count)];	// we could pick ourself here. that's fine.
+
+				int randomIndex;
+				do
+				{
+					randomIndex = Random.Range(0, count);
+				} while (randomIndex == i);
+				var node2 = filledNodes[randomIndex];
 
 				// swap
 				var node2Type = node2.itemType;
