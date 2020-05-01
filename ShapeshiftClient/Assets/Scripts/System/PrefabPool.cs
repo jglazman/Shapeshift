@@ -24,6 +24,7 @@ namespace Glazman.Shapeshift
 		GameObject GetGameObject();
 	}
 	
+	[RequireComponent(typeof(DontDestroyOnLoad))]
 	public class PrefabPool : MonoBehaviour
 	{
 		protected static PrefabPool Instance { get; private set; }
@@ -42,8 +43,6 @@ namespace Glazman.Shapeshift
 		private void OnDestroy()
 		{
 			Assert.IsTrue(Instance == this, "[PrefabPool] Destroyed a zombie.");
-
-			//ClearAll();	// TODO: Unity sometimes executes this out of order on shutdown?
 
 			HiddenRoot = null;
 			Instance = null;
@@ -82,6 +81,7 @@ namespace Glazman.Shapeshift
 		public static void Return<T>(T pooledObject) where T : MonoBehaviour, IPooledObject
 		{
 			Assert.IsTrue(_pools.ContainsKey(typeof(T)), $"[PrefabPool] Pool of type '{typeof(T)}' does not exist.");
+			Assert.IsNotNull(pooledObject, "[PrefabPool] Tried to return a null object to the pool");
 			
 			var (prefab, pool) = _pools[typeof(T)];
 			

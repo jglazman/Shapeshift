@@ -26,6 +26,15 @@ namespace Glazman.Shapeshift
 		Intro,
 		Outro
 	}
+
+	public interface ISceneTransitioner
+	{
+		/// <summary>
+		/// Notify the transitioner that it is time to transition. If state == Outro then the Transitioner
+		/// is expected to unregister itself in a timely manner.
+		/// </summary>
+		void Notify(TransitionState state);
+	}
 	
 	public static class SceneController
 	{
@@ -33,18 +42,18 @@ namespace Glazman.Shapeshift
 		/// Transitioners that are active in the scene, having already played their intros.
 		/// We will wait for all active transitioners to complete their outro before we complete the transition.
 		/// </summary>
-		private static List<SceneTransitioner> _activeTransitioners = new List<SceneTransitioner>();
+		private static List<ISceneTransitioner> _activeTransitioners = new List<ISceneTransitioner>();
 		
 		/// <summary>
 		/// Transitioners that have loaded from the next scene and are waiting to play their intros.
 		/// </summary>
-		private static List<SceneTransitioner> _pendingTransitioners = new List<SceneTransitioner>();
+		private static List<ISceneTransitioner> _pendingTransitioners = new List<ISceneTransitioner>();
 
 
 		private static bool _isLoadingScene = false;
 		
 		
-		public static void RegisterTransitioner(SceneTransitioner transitioner)
+		public static void RegisterTransitioner(ISceneTransitioner transitioner)
 		{
 			// Logger.LogEditor($"register: {Utilities.GetPathToGameObjectInScene(transitioner.gameObject)}");
 
@@ -54,7 +63,7 @@ namespace Glazman.Shapeshift
 			_pendingTransitioners.Add(transitioner);
 		}
 
-		public static void UnregisterTransitioner(SceneTransitioner transitioner)
+		public static void UnregisterTransitioner(ISceneTransitioner transitioner)
 		{
 			// Logger.LogEditor($"unregister: {Utilities.GetPathToGameObjectInScene(transitioner.gameObject)}");
 
@@ -85,8 +94,12 @@ namespace Glazman.Shapeshift
 			PopupViewController.CloseAll();
 			
 			// play the outro transitions
-			for (int i = 0; i < _activeTransitioners.Count; i++)
-				_activeTransitioners[i]?.Notify(TransitionState.Outro);
+			// TODO: we should have an explicit contract with the transitioner that it will unregister itself when it is done with its outro
+			//       but for now let's just trust the transitioners to behave properly
+			// copy the active list in case a transitioner unregisters itself in the notification callback
+			var outroTransitioners = new List<ISceneTransitioner>(_activeTransitioners);
+			for (int i = 0; i < outroTransitioners.Count; i++)
+				outroTransitioners[i]?.Notify(TransitionState.Outro);
 			
 			// load the next scene
 			var task = SceneManager.LoadSceneAsync(sceneName.ToString(), LoadSceneMode.Additive);
@@ -97,11 +110,11 @@ namespace Glazman.Shapeshift
 			{
 				yield return null;
 
-				// TODO: implement a safety net that takes into account low-end devices?
+				// TODO: this is a magic number for timeout. implement a safety net that takes into account low-end devices?
 				if (Time.time - startTime > 10f)
 				{
-					var remaining = string.Join(", ", _activeTransitioners.Select(t => t != null ? t.name : "null"));
-					Logger.LogError($"Timed out while waiting for SceneTransitioners to outro: {remaining}");
+					// var remaining = string.Join(", ", _activeTransitioners.Select(t => t != null ? t.name : "null"));
+					Logger.LogError($"Timed out while waiting for SceneTransitioners to outro");
 					break;
 				}
 			}
@@ -117,11 +130,9 @@ namespace Glazman.Shapeshift
 
 			if (_activeTransitioners.Count > 0)
 			{
-				var remaining = string.Join(", ", _activeTransitioners.Select(t => t != null ? t.name : "null"));
-				Logger.LogError($"Previous SceneTransitioners did not unregister themselves: {remaining}");
+				// var remaining = string.Join(", ", _activeTransitioners.Select(t => t != null ? t.name : "null"));
+				Logger.LogError($"Previous SceneTransitioners did not unregister themselves");
 			}
-			
-			var pending = string.Join(", ", _pendingTransitioners.Select(t => t != null ? Utilities.GetPathToGameObjectInScene(t.gameObject) : "null"));
 			
 			// switch transitioners
 			_activeTransitioners.Clear();

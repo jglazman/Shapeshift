@@ -30,10 +30,5 @@ namespace Glazman.Shapeshift
 		{
 			SetPosition(destination);
 		}
-
-		public void DoMatchAction(int points)
-		{
-			Invalidate();
-		}
 	}
 }

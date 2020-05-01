@@ -10,7 +10,7 @@ using UnityEngine.Assertions;
 
 namespace Glazman.Shapeshift
 {
-	public class LevelView : MonoBehaviour
+	public class LevelView : MonoBehaviour, ISceneTransitioner
 	{
 		public enum State
 		{
@@ -28,6 +28,8 @@ namespace Glazman.Shapeshift
 		private State _state = State.Uninitialized;
 
 		[SerializeField] private RectTransform _playfieldTransform = null;
+		[SerializeField] private RectTransform _playfieldRootNodes = null;
+		[SerializeField] private RectTransform _playfieldRootItems = null;
 		[SerializeField] private GridNodeView _gridNodePrefab = null;
 		[SerializeField] private GridItemView _gridItemPrefab = null;
 		[SerializeField] private LevelScoreView _levelScoreView = null;
@@ -42,6 +44,26 @@ namespace Glazman.Shapeshift
 		private Vector3 _playfieldOrigin; // [0,0] = lower-left corner
 		private static bool _didCreatePools = false;
 
+		
+		public void Notify(TransitionState state)
+		{
+			switch (state)
+			{
+				case TransitionState.Loading:
+					break;
+				
+				case TransitionState.Intro:
+					break;
+				
+				case TransitionState.Outro:
+					// return items to the pool before the scene changes. OnDestroy is too late.
+					ClearGridNodeInstances();
+					ClearGridItemInstances();
+					SceneController.UnregisterTransitioner(this);
+					break;
+			}
+		}
+		
 		private void Awake()
 		{
 			if (!_didCreatePools)
@@ -51,19 +73,18 @@ namespace Glazman.Shapeshift
 				_didCreatePools = true;
 			}
 			
+			SceneController.RegisterTransitioner(this);
 			Level.ListenForLevelEvents(ReceiveLevelEvents);
 			DisableEditMode();
 		}
 
 		private void OnDestroy()
 		{
-			ClearGridNodeInstances();
-			ClearGridItemInstances();
-			
+			SceneController.UnregisterTransitioner(this);
 			Level.StopListeningForLevelEvents(ReceiveLevelEvents);
 			SpriteResource.ClearCache();
 		}
-
+		
 		private void Update()
 		{
 			switch (_state)
@@ -257,14 +278,11 @@ namespace Glazman.Shapeshift
 						{
 							case CauseOfDeath.Matched:
 							{
-								gridItem.DoMatchAction(destroyedItem.Points);
-							} break;
-
-							default:
-							{
-								gridItem.Invalidate();
+								// TODO: spawn FX
 							} break;
 						}
+						
+						DestroyGridItemView(gridItem);
 					}
 				} break;
 				
@@ -396,10 +414,7 @@ namespace Glazman.Shapeshift
 					var pos = CalculateGridNodePosition(x, y);
 					
 					// load the node from the config
-					//var gridNode = Instantiate(_gridNodePrefab, _playfieldTransform);
-					var gridNode = PrefabPool.Get<GridNodeView>(_playfieldTransform);
-					gridNode.Configure(x, y, (int)nodeLayout.nodeType, pos, _tileSize);
-					_gridNodeInstances.Add(gridNode);
+					CreateGridNodeView(x, y, nodeLayout.nodeType, pos);
 
 					// if in edit mode then load the item from the config, else load from the state
 					int itemType = _state == State.EditMode ? 
@@ -413,6 +428,14 @@ namespace Glazman.Shapeshift
 				}
 		}
 
+		private GridNodeView CreateGridNodeView(int x, int y, GridNodeType nodeType, Vector3 position)
+		{
+			//var gridNode = Instantiate(_gridNodePrefab, _playfieldRootNodes);
+			var gridNode = PrefabPool.Get<GridNodeView>(_playfieldRootNodes);
+			gridNode.Configure(x, y, (int)nodeType, position, _tileSize);
+			_gridNodeInstances.Add(gridNode);
+			return gridNode;
+		}
 
 		private GridItemView CreateGridItemView(GridIndex index, int itemType)
 		{
@@ -421,11 +444,18 @@ namespace Glazman.Shapeshift
 
 		private GridItemView CreateGridItemView(int x, int y, int itemType, Vector3 position)
 		{
-			//var gridItem = Instantiate(_gridItemPrefab, _playfieldTransform);
-			var gridItem = PrefabPool.Get<GridItemView>(_playfieldTransform);
+			// var gridItem = Instantiate(_gridItemPrefab, _playfieldRootItems);
+			var gridItem = PrefabPool.Get<GridItemView>(_playfieldRootItems);
 			gridItem.Configure(x, y, itemType, position, _tileSize);
 			_gridItemInstances.Add(gridItem);
 			return gridItem;
+		}
+
+		private void DestroyGridItemView(GridItemView gridItem)
+		{
+			gridItem.Invalidate();
+			_gridItemInstances.Remove(gridItem);
+			PrefabPool.Return(gridItem);
 		}
 
 		private Vector3 CalculateGridNodePosition(GridIndex index)
@@ -449,7 +479,7 @@ namespace Glazman.Shapeshift
 			{
 				if (_gridNodeInstances[i] != null)
 				{
-					//Destroy(_gridNodeInstances[i].gameObject);
+					// Destroy(_gridNodeInstances[i].gameObject);
 					PrefabPool.Return(_gridNodeInstances[i]);
 				}
 			}
@@ -462,7 +492,7 @@ namespace Glazman.Shapeshift
 			{
 				if (_gridItemInstances[i] != null)
 				{
-					//Destroy(_gridItemInstances[i].gameObject);
+					// Destroy(_gridItemInstances[i].gameObject);
 					PrefabPool.Return(_gridItemInstances[i]);
 				}
 			}

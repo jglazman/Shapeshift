@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Glazman.Shapeshift
 {
-	public class SceneTransitioner : MonoBehaviour
+	public class SceneTransitioner : MonoBehaviour, ISceneTransitioner
 	{
 		private static readonly int IntroTrigger = Animator.StringToHash("PlayIntro");
 		private static readonly int OutroTrigger = Animator.StringToHash("PlayOutro");

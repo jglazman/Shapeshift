@@ -13,7 +13,7 @@ namespace Glazman.Shapeshift
 
 		public void OnReturnToPool()
 		{
-			SetType(-1);
+			Invalidate();
 		}
 
 		public GameObject GetGameObject()
