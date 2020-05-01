@@ -45,13 +45,13 @@ namespace Glazman.Shapeshift
 			}
 		}
 
-		public void ShowScore(Level.LevelWinEvent winEvent)
+		public void ShowScore(Level.LevelWinEvent winEvent, LevelConfig levelConfig)
 		{
 			_numStars = winEvent.Stars;
 			_scoreText.text = $"{winEvent.Points:n0}";
 			_movesText.text = $"{winEvent.Moves}";
 			_bestScore.SetActive(winEvent.Points >= winEvent.BestPoints);
-			_bestMoves.SetActive(winEvent.Moves < winEvent.BestMoves);
+			_bestMoves.SetActive(winEvent.Moves < winEvent.BestMoves || (winEvent.Moves == winEvent.BestMoves && winEvent.Moves < levelConfig.challengeValue ));
 
 			_starsAnimator.SetInteger(StarsInteger, winEvent.Stars);
 

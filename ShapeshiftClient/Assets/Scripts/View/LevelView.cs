@@ -194,7 +194,7 @@ namespace Glazman.Shapeshift
 				case Level.EventType.Win:
 				{
 					var winPopup = PopupViewController.Open<LevelWinPopup>();
-					winPopup.ShowScore(levelEvent as Level.LevelWinEvent);
+					winPopup.ShowScore(levelEvent as Level.LevelWinEvent, _levelConfig);
 				} break;
 
 				case Level.EventType.Lose:
