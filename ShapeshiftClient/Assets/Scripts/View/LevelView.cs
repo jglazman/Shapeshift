@@ -30,8 +30,10 @@ namespace Glazman.Shapeshift
 		[SerializeField] private RectTransform _playfieldTransform = null;
 		[SerializeField] private RectTransform _playfieldRootNodes = null;
 		[SerializeField] private RectTransform _playfieldRootItems = null;
+		[SerializeField] private RectTransform _playfieldFxItems = null;
 		[SerializeField] private GridNodeView _gridNodePrefab = null;
 		[SerializeField] private GridItemView _gridItemPrefab = null;
+		[SerializeField] private GridItemFX _gridItemMatchedFXPrefab = null;
 		[SerializeField] private LevelScoreView _levelScoreView = null;
 		[SerializeField] private float _animationSpeedMultiplier = 2f;
 
@@ -75,6 +77,7 @@ namespace Glazman.Shapeshift
 			{
 				PrefabPool.CreatePool<GridNodeView>(_gridNodePrefab);
 				PrefabPool.CreatePool<GridItemView>(_gridItemPrefab);
+				PrefabPool.CreatePool<GridItemFX>(_gridItemMatchedFXPrefab);
 				_didCreatePools = true;
 			}
 			
@@ -279,7 +282,7 @@ namespace Glazman.Shapeshift
 						{
 							case CauseOfDeath.Matched:
 							{
-								// TODO: spawn FX
+								CreateGridItemMatchedFX(gridItem, destroyedItem.Points, 5f);
 							} break;
 						}
 						
@@ -457,6 +460,14 @@ namespace Glazman.Shapeshift
 			gridItem.Invalidate();
 			_gridItemInstances.Remove(gridItem);
 			PrefabPool.Return(gridItem);
+		}
+
+		private GridItemFX CreateGridItemMatchedFX(GridItemView gridItem, int points, float seconds)
+		{
+			var fx = PrefabPool.Get<GridItemFX>(_playfieldFxItems);
+			fx.Configure(gridItem.Index.x, gridItem.Index.y, gridItem.ItemType, gridItem.transform.localPosition, _tileSize);
+			fx.Show(points, seconds);
+			return fx;
 		}
 
 		private Vector3 CalculateGridNodePosition(GridIndex index)
