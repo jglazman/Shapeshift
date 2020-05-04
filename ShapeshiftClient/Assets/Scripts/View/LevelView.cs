@@ -354,8 +354,23 @@ namespace Glazman.Shapeshift
 			if (_selectedGridItems.Count == 0)
 				return true;	// first selection
 
-			if (gridItem.ID != _selectedGridItems[0].ID)
-				return false;	// TODO: add wildcard rules
+			var firstItemConfig = GameConfig.GetGridItem(_selectedGridItems[0].ID);
+			var itemConfig = GameConfig.GetGridItem(gridItem.ID);
+			switch (itemConfig.MatchType)
+			{
+				case GridItemMatchType.None:
+					return false;
+					
+				case GridItemMatchType.Exact:
+					if (gridItem.ID != firstItemConfig.ID)
+						return false;
+					break;
+					
+				case GridItemMatchType.Category:
+					if (itemConfig.Category != firstItemConfig.Category)
+						return false;
+					break;
+			}
 
 			if (_selectedGridItems.Contains(gridItem))
 				return false;	// already selected

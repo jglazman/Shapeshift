@@ -219,13 +219,28 @@ namespace Glazman.Shapeshift
 			
 			matchedItems.Add(firstItem);
 
+			var firstItemConfig = GameConfig.GetGridItem(firstItem.ItemId);
 			var previousItem = firstItem; 
 			for (int i = 1; i < indices.Count; i++)
 			{
 				var item = TryGetGridNodeState(indices[i]);
 
-				if (item.ItemId != firstItem.ItemId)	// TODO: add wildcard rules
-					return false;	// must select similar items
+				var itemConfig = GameConfig.GetGridItem(item.ItemId);
+				switch (itemConfig.MatchType)
+				{
+					case GridItemMatchType.None:
+						return false;
+					
+					case GridItemMatchType.Exact:
+						if (item.ItemId != firstItem.ItemId)
+							return false;
+						break;
+					
+					case GridItemMatchType.Category:
+						if (itemConfig.Category != firstItemConfig.Category)
+							return false;
+						break;
+				}
 				
 				if (!GridIndex.IsNeighbor(item.Index, previousItem.Index))
 					return false;	// must select neighbors
