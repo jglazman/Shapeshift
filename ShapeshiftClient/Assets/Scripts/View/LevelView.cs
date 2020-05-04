@@ -278,6 +278,22 @@ namespace Glazman.Shapeshift
 					}
 				} break;
 				
+				case Level.EventType.ItemsMatched:
+				{
+					var itemsMatchedEvent = levelEvent as Level.ItemsMatchedEvent;
+
+					foreach (var matchedItem in itemsMatchedEvent.MatchedItems)
+					{
+						var gridItem = TryGetGridItem(matchedItem.Index);
+						Assert.IsNotNull(gridItem);
+						Assert.IsTrue(!gridItem.IsEmpty);
+
+						CreateGridItemMatchedFX(gridItem, matchedItem.Points, 5f);
+						
+						DestroyGridItemView(gridItem);
+					}
+				} break;
+				
 				case Level.EventType.ItemsDestroyed:
 				{
 					var itemsDestroyedEvent = levelEvent as Level.ItemsDestroyedEvent;
@@ -288,13 +304,13 @@ namespace Glazman.Shapeshift
 						Assert.IsNotNull(gridItem);
 						Assert.IsTrue(!gridItem.IsEmpty);
 
-						switch (itemsDestroyedEvent.Reason)
-						{
-							case CauseOfDeath.Matched:
-							{
-								CreateGridItemMatchedFX(gridItem, destroyedItem.Points, 5f);
-							} break;
-						}
+						// switch (itemsDestroyedEvent.Reason)
+						// {
+						// 	case CauseOfDeath.Matched:
+						// 	{
+						// 		CreateGridItemMatchedFX(gridItem, destroyedItem.Points, 5f);
+						// 	} break;
+						// }
 						
 						DestroyGridItemView(gridItem);
 					}

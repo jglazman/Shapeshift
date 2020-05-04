@@ -21,7 +21,9 @@ namespace Glazman.Shapeshift
 			IsDefault,
 			MinSelection,
 			MaxSelection,
-			WordCheck
+			WordCheck,
+			MatchPointsBase,
+			MatchPointsIncrement
 		}
 
 		public const string ResourceName = "MatchRules";
@@ -32,6 +34,8 @@ namespace Glazman.Shapeshift
 		public int MinSelection;
 		public int MaxSelection;
 		public bool WordCheck;
+		public int MatchPointsBase;
+		public int MatchPointsIncrement;
 	}
 	
 	public struct GridNodeConfig
@@ -40,7 +44,9 @@ namespace Glazman.Shapeshift
 		{
 			ID = 0,
 			ImageName,
-			IsOpen
+			IsOpen,
+			MatchPointsItemMultiplier,
+			MatchPointsMatchMultiplier
 		}
 		
 		public const string ResourceName = "GridNode";
@@ -48,6 +54,8 @@ namespace Glazman.Shapeshift
 		public string ID;
 		public string ImageName;
 		public bool IsOpen;
+		public int MatchPointsItemMultiplier;
+		public int MatchPointsMatchMultiplier;
 	}
 
 	public enum GridItemMatchType
@@ -66,7 +74,8 @@ namespace Glazman.Shapeshift
 			Category,
 			MatchType,
 			MatchIndex,
-			DropFrequency
+			DropFrequency,
+			MatchPoints
 		}
 		
 		public const string ResourceName = "GridItem";
@@ -77,6 +86,7 @@ namespace Glazman.Shapeshift
 		public GridItemMatchType MatchType;
 		public int MatchIndex;
 		public int DropFrequency;
+		public int MatchPoints;
 	}
 
 	public class GridItemDropDistribution
@@ -204,7 +214,10 @@ namespace Glazman.Shapeshift
 							IsDefault = bool.Parse(config[(int)MatchRulesConfig.Headers.IsDefault]),
 							MinSelection = int.Parse(config[(int)MatchRulesConfig.Headers.MinSelection]),
 							MaxSelection = int.Parse(config[(int)MatchRulesConfig.Headers.MaxSelection]),
-							WordCheck = bool.Parse(config[(int)MatchRulesConfig.Headers.WordCheck])
+							WordCheck = bool.Parse(config[(int)MatchRulesConfig.Headers.WordCheck]),
+							MatchPointsBase = int.Parse(config[(int)MatchRulesConfig.Headers.MatchPointsBase]),
+							MatchPointsIncrement = int.Parse(config[(int)MatchRulesConfig.Headers.MatchPointsIncrement])
+
 						};
 						Assert.IsTrue(!MatchRules.ContainsKey(matchRules.ID), $"[MatchRulesConfig] IDs must be unique: {matchRules.ID}");
 						MatchRules[matchRules.ID] = matchRules;
@@ -213,7 +226,7 @@ namespace Glazman.Shapeshift
 			}
 			catch (System.Exception e)
 			{
-				Logger.LogError($"Failed to load MatchRulesConfig: {e.Message}");
+				Logger.LogError($"Failed to load MatchRulesConfig: {e}");
 			}
 			
 			GridNodes = new Dictionary<string, GridNodeConfig>();
@@ -238,7 +251,9 @@ namespace Glazman.Shapeshift
 						{
 							ID = config[(int)GridNodeConfig.Headers.ID],
 							ImageName = config[(int)GridNodeConfig.Headers.ImageName],
-							IsOpen = bool.Parse(config[(int)GridNodeConfig.Headers.IsOpen])
+							IsOpen = bool.Parse(config[(int)GridNodeConfig.Headers.IsOpen]),
+							MatchPointsItemMultiplier = int.Parse(config[(int)GridNodeConfig.Headers.MatchPointsItemMultiplier]),
+							MatchPointsMatchMultiplier = int.Parse(config[(int)GridNodeConfig.Headers.MatchPointsMatchMultiplier])
 						};
 						Assert.IsTrue(!GridNodes.ContainsKey(gridNode.ID), $"[GridNodeConfig] IDs must be unique: {gridNode.ID}");
 						GridNodes[gridNode.ID] = gridNode;
@@ -247,7 +262,7 @@ namespace Glazman.Shapeshift
 			}
 			catch (System.Exception e)
 			{
-				Logger.LogError($"Failed to load GridNodeConfig: {e.Message}");
+				Logger.LogError($"Failed to load GridNodeConfig: {e}");
 			}
 			
 			GridItems = new Dictionary<string, GridItemConfig>();
@@ -275,7 +290,8 @@ namespace Glazman.Shapeshift
 							Category = config[(int)GridItemConfig.Headers.Category],
 							MatchType = (GridItemMatchType)Enum.Parse(typeof(GridItemMatchType), config[(int)GridItemConfig.Headers.MatchType]),
 							MatchIndex = int.Parse(config[(int)GridItemConfig.Headers.MatchIndex]),
-							DropFrequency = int.Parse(config[(int)GridItemConfig.Headers.DropFrequency])
+							DropFrequency = int.Parse(config[(int)GridItemConfig.Headers.DropFrequency]),
+							MatchPoints = int.Parse(config[(int)GridItemConfig.Headers.MatchPoints])
 						};
 						Assert.IsTrue(!GridItems.ContainsKey(gridItem.ID), $"[GridItemConfig] IDs must be unique: {gridItem.ID}");
 						GridItems[gridItem.ID] = gridItem;
@@ -284,7 +300,7 @@ namespace Glazman.Shapeshift
 			}
 			catch (System.Exception e)
 			{
-				Logger.LogError($"Failed to load GridItemConfig: {e.Message}");
+				Logger.LogError($"Failed to load GridItemConfig: {e}");
 			}
 		}
 	}

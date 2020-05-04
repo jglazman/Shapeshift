@@ -25,8 +25,7 @@ namespace Glazman.Shapeshift
 
 	public enum CauseOfDeath
 	{
-		Undefined = 0,
-		Matched
+		Undefined = 0
 	}
 
 	/// <summary>The payload for grid events.</summary>
@@ -49,7 +48,7 @@ namespace Glazman.Shapeshift
 			return item;
 		}
 	}
-	
+
 	/// <summary>The initial setup of a grid node.</summary>
 	[Serializable]
 	public struct GridNodeLayout
@@ -66,7 +65,7 @@ namespace Glazman.Shapeshift
 		public string ItemId { get; private set;  }
 
 		public GridNodeConfig GridNodeConfig => GameConfig.GetGridNode(NodeId);
-		public GridItemConfig? GridItemConfig => !string.IsNullOrEmpty(ItemId) ? (GridItemConfig?)GameConfig.GetGridItem(ItemId) : null;
+		public GridItemConfig GridItemConfig => GameConfig.GetGridItem(ItemId);
 
 		public GridNodeState(int x, int y, string nodeId, string itemId)
 		{

@@ -175,8 +175,7 @@ namespace Glazman.Shapeshift
 			{
 				matchEvents.Add(new Level.MatchSuccessEvent());
 
-				// make the move
-				var gridUpdateEvents = RemoveGridItems(CauseOfDeath.Matched, matchedItems);
+				var gridUpdateEvents = MatchGridItems(matchedItems);
 				
 				// score the move
 				int pointsDelta = 0;
@@ -207,11 +206,11 @@ namespace Glazman.Shapeshift
 			return matchEvents;
 		}
 
-		private bool IsValidMatch(List<GridIndex> indices, out List<GridNodeState> matchedItems)
+		private bool IsValidMatch(List<GridIndex> indices, out List<Tuple<int,GridNodeState>> matchedItems)
 		{
 			var matchRules = GameConfig.GetMatchRules(Config.matchRules);
-				
-			matchedItems = new List<GridNodeState>();
+			
+			matchedItems = null;
 			
 			if (indices == null)
 				return false;
@@ -222,26 +221,41 @@ namespace Glazman.Shapeshift
 			if (matchRules.MaxSelection > matchRules.MinSelection && indices.Count > matchRules.MaxSelection)
 				return false;
 
-			var firstItem = TryGetGridNodeState(indices[0]);
-			if (firstItem == null || !firstItem.IsFilled())
-				return false; // must select valid items
-			
-			matchedItems.Add(firstItem);
+			int pointsMultiplier = 1;
 
-			var firstItemConfig = GameConfig.GetGridItem(firstItem.ItemId);
-			var previousItem = firstItem; 
-			for (int i = 1; i < indices.Count; i++)
+			var matchedNodes = new List<GridNodeState>(indices.Count);
+			for (int i = 0; i < indices.Count; i++)
+			{
+				var matchedNode = TryGetGridNodeState(indices[i]);
+				if (matchedNode == null || !matchedNode.IsFilled())
+					return false; // must select valid items
+				
+				matchedNodes.Add(matchedNode);
+
+				pointsMultiplier *= matchedNode.GridNodeConfig.MatchPointsMatchMultiplier;
+			}
+
+			matchedItems = new List<Tuple<int,GridNodeState>>(indices.Count) {
+				new Tuple<int,GridNodeState> (
+					(matchRules.MatchPointsBase + matchedNodes[0].GridItemConfig.MatchPoints) * matchedNodes[0].GridNodeConfig.MatchPointsItemMultiplier * pointsMultiplier,
+					matchedNodes[0]
+				)
+			};
+
+			var firstItemConfig = matchedNodes[0].GridItemConfig;
+			var previousItem = matchedNodes[0];
+			for (int i = 1; i < matchedNodes.Count; i++)
 			{
 				var item = TryGetGridNodeState(indices[i]);
-
 				var itemConfig = GameConfig.GetGridItem(item.ItemId);
+				
 				switch (itemConfig.MatchType)
 				{
 					case GridItemMatchType.None:
 						return false;
 					
 					case GridItemMatchType.Exact:
-						if (item.ItemId != firstItem.ItemId)
+						if (item.ItemId != firstItemConfig.ID)
 							return false;
 						break;
 					
@@ -254,7 +268,10 @@ namespace Glazman.Shapeshift
 				if (!GridIndex.IsNeighbor(item.Index, previousItem.Index))
 					return false;	// must select neighbors
 
-				matchedItems.Add(item);
+				matchedItems.Add(new Tuple<int,GridNodeState> (
+					(matchRules.MatchPointsBase + matchedNodes[i].GridItemConfig.MatchPoints + (matchRules.MatchPointsIncrement * i)) * matchedNodes[i].GridNodeConfig.MatchPointsItemMultiplier * pointsMultiplier,
+					matchedNodes[i]
+				));
 				
 				previousItem = item;
 			}
@@ -263,7 +280,7 @@ namespace Glazman.Shapeshift
 			{
 				var word = new StringBuilder();
 				foreach (var item in matchedItems)
-					word.Append((char)GameConfig.GetGridItem(item.ItemId).MatchIndex);
+					word.Append((char)GameConfig.GetGridItem(item.Item2.ItemId).MatchIndex);
 
 				if (!WordMap.Words.FindWord(word.ToString().ToLower(), out var wordTypes))
 					return false;
@@ -272,16 +289,38 @@ namespace Glazman.Shapeshift
 			return true;
 		}
 		
-		private List<Level.Event> RemoveGridItems(CauseOfDeath reason, List<GridNodeState> itemsToRemove)
+		private List<Level.Event> MatchGridItems(List<Tuple<int,GridNodeState>> matchedItems)
 		{
 			List<Level.Event> gridUpdateEvents = new List<Level.Event>();
-		
+			
 			// record the event
-			var destroyedEvent = new Level.ItemsDestroyedEvent(reason, itemsToRemove);
+			var destroyedEvent = new Level.ItemsMatchedEvent(matchedItems);
 			gridUpdateEvents.Add(destroyedEvent);
 			
 			// remove the items from the grid
-			foreach (var node in itemsToRemove)
+			foreach (var node in matchedItems)
+				node.Item2.RemoveItem();
+
+			// fix the grid until it ain't broke no more
+			bool didUpdate;
+			do
+			{
+				didUpdate = UpdateGridState(ref gridUpdateEvents);
+			} while (didUpdate);
+			
+			return gridUpdateEvents;
+		}
+
+		private List<Level.Event> RemoveGridItems(CauseOfDeath reason, List<GridNodeState> removedItems)
+		{
+			List<Level.Event> gridUpdateEvents = new List<Level.Event>();
+			
+			// record the event
+			var destroyedEvent = new Level.ItemsDestroyedEvent(reason, removedItems);
+			gridUpdateEvents.Add(destroyedEvent);
+			
+			// remove the items from the grid
+			foreach (var node in removedItems)
 				node.RemoveItem();
 
 			// fix the grid until it ain't broke no more

@@ -2,7 +2,9 @@
 // Copyright (c) 2020 Jeremy Glazman
 //
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Glazman.Shapeshift
 {
@@ -45,6 +47,7 @@ namespace Glazman.Shapeshift
 			ItemsCreated,
 			ItemsMoved,
 			ItemsSwapped,
+			ItemsMatched,
 			ItemsDestroyed
 		}
 
@@ -185,6 +188,25 @@ namespace Glazman.Shapeshift
 			}
 		}
 
+		public class ItemsMatchedEvent : Event
+		{
+			public override EventType EventType { get { return EventType.ItemsMatched; } }
+
+			public List<GridEventItem> MatchedItems { get; }
+			
+			public ItemsMatchedEvent(List<Tuple<int,GridNodeState>> matchedItems)
+			{
+				MatchedItems = new List<GridEventItem>(matchedItems.Count);
+				
+				// calculate total points for this event
+				foreach (var (points, nodeState) in matchedItems)
+				{
+					MatchedItems.Add(GridEventItem.Create(nodeState, points));
+					EventPoints += points;
+				}
+			}
+		}
+
 		public class ItemsDestroyedEvent : Event
 		{
 			public override EventType EventType { get { return EventType.ItemsDestroyed; } }
@@ -195,15 +217,7 @@ namespace Glazman.Shapeshift
 			public ItemsDestroyedEvent(CauseOfDeath reason, List<GridNodeState> destroyedItems)
 			{
 				Reason = reason;
-				DestroyedItems = new List<GridEventItem>(destroyedItems.Count);
-
-				for (int i = 0; i < destroyedItems.Count; i++)
-				{
-					int points = 100 + (25 * i);	// TODO: data-driven scoring
-					var item = GridEventItem.Create(destroyedItems[i], points);
-					DestroyedItems.Add(item);
-					EventPoints += points;	// total points
-				}
+				DestroyedItems = new List<GridEventItem>(destroyedItems.Select(item => GridEventItem.Create(item, 0)));
 			}
 		}
 	}
