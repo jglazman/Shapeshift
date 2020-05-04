@@ -371,22 +371,21 @@ namespace Glazman.Shapeshift
 			if (_selectedGridItems.Count == 0)
 				return true;	// first selection
 
-			var firstItemConfig = GameConfig.GetGridItem(_selectedGridItems[0].ID);
 			var itemConfig = GameConfig.GetGridItem(gridItem.ID);
-			switch (itemConfig.MatchType)
+			
+			if (itemConfig.MatchType == GridItemMatchType.None)
+				return false;
+
+			var previousItemConfig = _selectedGridItems[_selectedGridItems.Count - 1].GridItemConfig;
+			if (itemConfig.MatchType == GridItemMatchType.Category || previousItemConfig.MatchType == GridItemMatchType.Category)
 			{
-				case GridItemMatchType.None:
+				if (itemConfig.Category != previousItemConfig.Category)
 					return false;
-					
-				case GridItemMatchType.Exact:
-					if (gridItem.ID != firstItemConfig.ID)
-						return false;
-					break;
-					
-				case GridItemMatchType.Category:
-					if (itemConfig.Category != firstItemConfig.Category)
-						return false;
-					break;
+			}
+			else if (itemConfig.MatchType == GridItemMatchType.Exact)
+			{
+				if (itemConfig.ID != previousItemConfig.ID)
+					return false;
 			}
 
 			if (_selectedGridItems.Contains(gridItem))

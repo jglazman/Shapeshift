@@ -242,27 +242,24 @@ namespace Glazman.Shapeshift
 				)
 			};
 
-			var firstItemConfig = matchedNodes[0].GridItemConfig;
 			var previousItem = matchedNodes[0];
 			for (int i = 1; i < matchedNodes.Count; i++)
 			{
 				var item = TryGetGridNodeState(indices[i]);
 				var itemConfig = GameConfig.GetGridItem(item.ItemId);
+
+				if (itemConfig.MatchType == GridItemMatchType.None)
+					return false;
 				
-				switch (itemConfig.MatchType)
+				if (itemConfig.MatchType == GridItemMatchType.Category || previousItem.GridItemConfig.MatchType == GridItemMatchType.Category)
 				{
-					case GridItemMatchType.None:
+					if (itemConfig.Category != previousItem.GridItemConfig.Category)
 						return false;
-					
-					case GridItemMatchType.Exact:
-						if (item.ItemId != firstItemConfig.ID)
-							return false;
-						break;
-					
-					case GridItemMatchType.Category:
-						if (itemConfig.Category != firstItemConfig.Category)
-							return false;
-						break;
+				}
+				else if (itemConfig.MatchType == GridItemMatchType.Exact)
+				{
+					if (item.ItemId != previousItem.GridItemConfig.ID)
+						return false;
 				}
 				
 				if (!GridIndex.IsNeighbor(item.Index, previousItem.Index))
