@@ -1,0 +1,3 @@
+ID,Category,IsDefault,MinSelection,MaxSelection,WordCheck
+Shape-Default,Shape,TRUE,3,0,FALSE
+Word-Default,Word,TRUE,3,0,TRUE

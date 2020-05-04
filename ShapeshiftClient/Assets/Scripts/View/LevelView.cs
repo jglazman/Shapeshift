@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Jeremy Glazman
 //
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -374,7 +375,11 @@ namespace Glazman.Shapeshift
 
 			if (_selectedGridItems.Contains(gridItem))
 				return false;	// already selected
-			
+
+			var matchRules = GameConfig.GetMatchRules(_levelConfig.matchRules);
+			if (matchRules.MaxSelection > matchRules.MinSelection && _selectedGridItems.Count > matchRules.MaxSelection)
+				return false;
+
 			if (GridIndex.IsNeighbor(gridItem.Index, _selectedGridItems[_selectedGridItems.Count - 1].Index))
 				return true;	// must neighbor the last selected item
 
@@ -580,10 +585,14 @@ namespace Glazman.Shapeshift
 		[SerializeField] private TMP_InputField _editModeInputHeight = null;
 		[SerializeField] private TextMeshProUGUI _editModeTextCategory = null;
 		[SerializeField] private TMP_InputField _editModeInputMaxItemTypes = null;
+		[SerializeField] private TextMeshProUGUI _editModeTextMatchRules = null;
+		[SerializeField] private TextMeshProUGUI _editModeTextGoalType = null;
+		[SerializeField] private TMP_InputField _editModeInputGoalItem = null;
 		[SerializeField] private TMP_InputField _editModeInputGoal1 = null;
 		[SerializeField] private TMP_InputField _editModeInputGoal2 = null;
 		[SerializeField] private TMP_InputField _editModeInputGoal3 = null;
-		[SerializeField] private TMP_InputField _editModeInputMoves = null;
+		[SerializeField] private TextMeshProUGUI _editModeTextChallengeType = null;
+		[SerializeField] private TMP_InputField _editModeInputChallengeValue = null;
 
 		private bool _editModeItemLayer = true;
 
@@ -620,7 +629,7 @@ namespace Glazman.Shapeshift
 						
 						gridNode.EditMode_SetId(nextNode.ID);
 						
-						// update the item
+						// sync the item
 						var gridItem = TryGetGridItem(gridNode.Index);
 						if (gridItem != null)
 						{
@@ -648,8 +657,13 @@ namespace Glazman.Shapeshift
 					string nextCategory = allCategories[index];
 					_editModeTextCategory.text = nextCategory;
 					
+					// sync max item types
 					_editModeInputMaxItemTypes.text = "0";
+					
+					// sync match rules
+					_editModeTextMatchRules.text = GameConfig.AllMatchRules.First(rule => rule.Category == nextCategory).ID;
 
+					// sync items
 					var defaultGridItem = GameConfig.GetDefaultLayoutGridItem(nextCategory);
 					foreach (var gridItem in _gridItemInstances)
 					{
@@ -662,6 +676,60 @@ namespace Glazman.Shapeshift
 			}
 		}
 
+		public void OnClick_EditMode_NextRules()
+		{
+			var allRules = GameConfig.AllMatchRules.Where(rule => rule.Category == _editModeTextCategory.text).ToArray();
+			for (int i = 0; i < allRules.Length; i++)
+			{
+				if (allRules[i].ID == _editModeTextMatchRules.text)
+				{
+					int index = i + 1;
+					if (index >= allRules.Length)
+						index = 0;
+
+					_editModeTextMatchRules.text = allRules[index].ID;
+
+					return;
+				}
+			}
+		}
+
+		public void OnClick_EditMode_NextGoalType()
+		{
+			var allGoalTypes = Enum.GetNames(typeof(LevelGoalType));
+			for (int i = 0; i < allGoalTypes.Length; i++)
+			{
+				if (allGoalTypes[i] == _editModeTextGoalType.text)
+				{
+					int index = i + 1;
+					if (index >= allGoalTypes.Length)
+						index = 0;
+
+					_editModeTextGoalType.text = allGoalTypes[i];
+
+					return;
+				}
+			}
+		}
+
+		public void OnClick_EditMode_NextChallengeType()
+		{
+			var allChallengeTypes = Enum.GetNames(typeof(LevelChallengeType));
+			for (int i = 0; i < allChallengeTypes.Length; i++)
+			{
+				if (allChallengeTypes[i] == _editModeTextChallengeType.text)
+				{
+					int index = i + 1;
+					if (index >= allChallengeTypes.Length)
+						index = 0;
+
+					_editModeTextChallengeType.text = allChallengeTypes[i];
+
+					return;
+				}
+			}
+		}
+		
 		public void OnClick_EditMode_ToggleLayer()
 		{
 			_editModeItemLayer = !_editModeItemLayer;
@@ -672,17 +740,40 @@ namespace Glazman.Shapeshift
 
 		public void OnClick_EditMode_Save()
 		{
+			if (!GameConfig.AllMatchRules.Any(rule => rule.ID == _editModeTextMatchRules.text))
+			{
+				MessagePopup.ShowMessage($"Invalid Match Rules: '{_editModeTextMatchRules.text}'");
+				return;
+			}
+				
 			var allCategories = GameConfig.GetAllGridItemCategories();
 			if (!allCategories.Contains(_editModeTextCategory.text))
 			{
 				MessagePopup.ShowMessage($"Invalid Category: '{_editModeTextCategory.text}'");
 				return;
 			}
-			
+
 			if (!int.TryParse(_editModeInputMaxItemTypes.text, out var maxItemTypes))
 			{
 				MessagePopup.ShowMessage($"Invalid Max Item Types: '{_editModeInputMaxItemTypes.text}'");
 				return;
+			}
+
+			if (!Enum.TryParse(_editModeTextGoalType.text, out LevelGoalType goalType))
+			{
+				MessagePopup.ShowMessage($"Invalid Goal Type: '{_editModeTextGoalType.text}'");
+				return;
+			}
+
+			string goalItemId = null;
+			if (!string.IsNullOrEmpty(_editModeInputGoalItem.text))
+			{
+				goalItemId = _editModeInputGoalItem.text;
+				if (GameConfig.GetGridItem(goalItemId).ID == null)
+				{
+					MessagePopup.ShowMessage($"Invalid Goal Item ID: '{_editModeInputGoalItem.text}'");
+					return;
+				}
 			}
 
 			if (!int.TryParse(_editModeInputGoal1.text, out var goal1))
@@ -703,19 +794,27 @@ namespace Glazman.Shapeshift
 				return;
 			}
 
-			if (!int.TryParse(_editModeInputMoves.text, out var moves) || moves < 1)
+			if (!Enum.TryParse(_editModeTextChallengeType.text, out LevelChallengeType challengeType))
 			{
-				MessagePopup.ShowMessage($"Invalid Max Moves: '{_editModeInputMoves.text}'");
+				MessagePopup.ShowMessage($"Invalid Challenge Type: '{_editModeTextChallengeType.text}'");
+				return;
+			}
+			
+			if (!int.TryParse(_editModeInputChallengeValue.text, out var moves) || moves < 1)
+			{
+				MessagePopup.ShowMessage($"Invalid Max Moves: '{_editModeInputChallengeValue.text}'");
 				return;
 			}
 
 			_levelConfig.category = _editModeTextCategory.text;
 			_levelConfig.excludeItemIds = EditMode_ConvertMaxItemTypesToExcludedItemIds(_editModeTextCategory.text, Mathf.Max(0, maxItemTypes));
-			_levelConfig.goalType = LevelGoalType.Points;
+			_levelConfig.matchRules = _editModeTextMatchRules.text;
+			_levelConfig.goalType = goalType;
+			_levelConfig.goalItemId = goalItemId;
 			_levelConfig.goal1 = Mathf.Max(0, goal1);
 			_levelConfig.goal2 = Mathf.Max(0, goal2);
 			_levelConfig.goal3 = Mathf.Max(0, goal3);
-			_levelConfig.challengeType = LevelChallengeType.Moves;
+			_levelConfig.challengeType = challengeType;
 			_levelConfig.challengeValue = moves;
 
 			foreach (var gridNode in _gridNodeInstances)
@@ -798,10 +897,13 @@ namespace Glazman.Shapeshift
 			_editModeInputHeight.text = _levelConfig.height.ToString();
 			_editModeTextCategory.text = _levelConfig.category;
 			_editModeInputMaxItemTypes.text = EditMode_ConvertExcludedItemIdsToMaxItemTypes(_levelConfig.category, _levelConfig.excludeItemIds).ToString();
+			_editModeTextMatchRules.text = _levelConfig.matchRules;
+			_editModeTextGoalType.text = _levelConfig.goalType.ToString();
+			_editModeInputGoalItem.text = _levelConfig.goalItemId;
 			_editModeInputGoal1.text = _levelConfig.goal1.ToString();
 			_editModeInputGoal2.text = _levelConfig.goal2.ToString();
 			_editModeInputGoal3.text = _levelConfig.goal3.ToString();
-			_editModeInputMoves.text = _levelConfig.challengeValue.ToString();
+			_editModeInputChallengeValue.text = _levelConfig.challengeValue.ToString();
 			_editModePanel.SetActive(true);
 		}
 

@@ -36,8 +36,11 @@ namespace Glazman.Shapeshift
 
 		public string category;
 		public string[] excludeItemIds;
+
+		public string matchRules;
 		
 		public LevelGoalType goalType;
+		public string goalItemId;
 		public int goal1;
 		public int goal2;
 		public int goal3;
@@ -94,14 +97,19 @@ namespace Glazman.Shapeshift
 
 		public static LevelConfig CreateDefaultLevel(int width, int height)
 		{
+			string defaultCategory = GameConfig.GetAllGridItemCategories().First();
+			var defaultMatchRule = GameConfig.AllMatchRules.First(rule => rule.Category == defaultCategory && rule.IsDefault);
+			
 			var config = new LevelConfig
 			{
 				width = width,
 				height = height,
 				layout = new GridNodeLayout[width * height],
-				category = GameConfig.GetAllGridItemCategories().First(),
+				category = defaultCategory,
 				excludeItemIds = new string[]{},
+				matchRules = defaultMatchRule.ID,
 				goalType = LevelGoalType.Points,
+				goalItemId = null,
 				goal1 = 3000,
 				goal2 = 7000,
 				goal3 = 10000,

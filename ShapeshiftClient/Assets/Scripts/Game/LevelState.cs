@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Random = UnityEngine.Random;
@@ -208,10 +209,18 @@ namespace Glazman.Shapeshift
 
 		private bool IsValidMatch(List<GridIndex> indices, out List<GridNodeState> matchedItems)
 		{
+			var matchRules = GameConfig.GetMatchRules(Config.matchRules);
+				
 			matchedItems = new List<GridNodeState>();
 			
-			if (indices == null || indices.Count < 3)
-				return false; // must select at least 3 items
+			if (indices == null)
+				return false;
+
+			if (indices.Count < matchRules.MinSelection)
+				return false;
+
+			if (matchRules.MaxSelection > matchRules.MinSelection && indices.Count > matchRules.MaxSelection)
+				return false;
 
 			var firstItem = TryGetGridNodeState(indices[0]);
 			if (firstItem == null || !firstItem.IsFilled())
@@ -248,6 +257,16 @@ namespace Glazman.Shapeshift
 				matchedItems.Add(item);
 				
 				previousItem = item;
+			}
+
+			if (matchRules.WordCheck)
+			{
+				var word = new StringBuilder();
+				foreach (var item in matchedItems)
+					word.Append((char)GameConfig.GetGridItem(item.ItemId).MatchIndex);
+
+				if (!WordMap.Words.FindWord(word.ToString().ToLower(), out var wordTypes))
+					return false;
 			}
 
 			return true;

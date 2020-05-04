@@ -111,25 +111,26 @@ namespace Glazman.Shapeshift
 			}
 		}
 
-		public int FindWord(string word)
+		public bool FindWord(string word, out int wordTypes)
 		{
 			if (_map != null && !string.IsNullOrEmpty(word))
 			{
 				char c = word[0];
-				WordMap m = null;
 
-				if (_map.TryGetValue(c, out m))
+				if (_map.TryGetValue(c, out var m))
 				{
 					if (word.Length == 1)
 					{
-						return m.WordTypes;
+						wordTypes = m.WordTypes;
+						return true;
 					}
 
-					return m.FindWord(word.Substring(1));
+					return m.FindWord(word.Substring(1), out wordTypes);
 				}
 			}
 
-			return (int)WordType.NotFound;
+			wordTypes = (int)WordType.NotFound;
+			return false;
 		}
 
 		private static int GetEncodedWordTypes(string str)
