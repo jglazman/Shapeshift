@@ -24,6 +24,7 @@ namespace Glazman.Shapeshift
 		public static void Initialize()
 		{
 			WordMap.Initialize();
+			GameConfig.Initialize();
 			UserInput.Initialize();
 			
 			SetState(State.MainMenu, null);

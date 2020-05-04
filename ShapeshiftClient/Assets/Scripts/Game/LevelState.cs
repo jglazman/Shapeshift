@@ -21,19 +21,38 @@ namespace Glazman.Shapeshift
 		public int Moves { get; protected set; }
 		public int Result { get; protected set; } // -1 = lose, 0 = in progress, 1 = win
 
+		private GridItemDropDistribution GridItemDrops = null;
+		
+		
 		public LevelState(int levelIndex, LevelConfig config)
 		{
 			LevelIndex = levelIndex;
 			Config = config;
 			Grid = null;
 
+			var includedItems = GameConfig.GetAllGridItemsInCategory(config.category, config.excludeItemIds);
+			GridItemDrops = new GridItemDropDistribution(config.category, includedItems);
+
 			if (config.width > 0 && config.height > 0)
 			{
+				var defaultGridItem = GameConfig.GetDefaultLayoutGridItem(config.category);
+				
 				// initialize the grid
 				Grid = new GridNodeState[config.width, config.height];
 				for (int y = 0; y < config.height; y++)
-					for (int x = 0; x < config.width; x++)
-						Grid[x, y] = GridNodeState.CreateFromLayout(x, y, config.GetNodeLayout(x, y), config.maxItemTypes);
+				for (int x = 0; x < config.width; x++)
+				{
+					var layout = config.GetNodeLayout(x, y);
+					string itemId = null;
+					if (!string.IsNullOrEmpty(layout.itemId))
+					{
+						if (layout.itemId != defaultGridItem.ID)
+							itemId = layout.itemId;
+						else
+							itemId = GridItemDrops.Next();
+					}
+					Grid[x, y] = new GridNodeState(x, y, layout.nodeId, itemId);
+				}
 			}
 		}
 
@@ -72,7 +91,7 @@ namespace Glazman.Shapeshift
 			for (int yUp = y + 1; yUp < Height; yUp++)
 			{
 				var nodeUp = Grid[x, yUp];
-				if (nodeUp.nodeType == GridNodeType.Closed)
+				if (!nodeUp.GridNodeConfig.IsOpen)
 					return null; // blocked
 				
 				if (nodeUp.IsFilled())
@@ -195,7 +214,7 @@ namespace Glazman.Shapeshift
 				return false; // must select at least 3 items
 
 			var firstItem = TryGetGridNodeState(indices[0]);
-			if (firstItem == null || firstItem.itemType <= 0)
+			if (firstItem == null || !firstItem.IsFilled())
 				return false; // must select valid items
 			
 			matchedItems.Add(firstItem);
@@ -205,10 +224,10 @@ namespace Glazman.Shapeshift
 			{
 				var item = TryGetGridNodeState(indices[i]);
 
-				if (item.itemType != firstItem.itemType)	// TODO: add wildcard rules
+				if (item.ItemId != firstItem.ItemId)	// TODO: add wildcard rules
 					return false;	// must select similar items
 				
-				if (!GridIndex.IsNeighbor(item.index, previousItem.index))
+				if (!GridIndex.IsNeighbor(item.Index, previousItem.Index))
 					return false;	// must select neighbors
 
 				matchedItems.Add(item);
@@ -228,8 +247,8 @@ namespace Glazman.Shapeshift
 			gridUpdateEvents.Add(destroyedEvent);
 			
 			// remove the items from the grid
-			foreach (var item in itemsToRemove)
-				item.itemType = -1;
+			foreach (var node in itemsToRemove)
+				node.RemoveItem();
 
 			// fix the grid until it ain't broke no more
 			bool didUpdate;
@@ -272,11 +291,11 @@ namespace Glazman.Shapeshift
 					if (aboveFilledNode != null)
 					{
 						// pull the item down
-						node.itemType = aboveFilledNode.itemType;
-						aboveFilledNode.itemType = -1;
+						node.SetItemId(aboveFilledNode.ItemId);
+						aboveFilledNode.RemoveItem();
 						
 						// record the event
-						var movedItem = GridEventItem.Create(node, 0, aboveFilledNode.index);
+						var movedItem = GridEventItem.Create(node, 0, aboveFilledNode.Index);
 						movedItems.Add(movedItem);
 					}
 				}
@@ -309,11 +328,11 @@ namespace Glazman.Shapeshift
 					var nodeLeft = TryGetGridNodeState(x - 1, y - 1);
 					if (nodeLeft?.IsEmpty() == true)
 					{
-						nodeLeft.itemType = node.itemType;
-						node.itemType = -1;
+						nodeLeft.SetItemId(node.ItemId);
+						node.RemoveItem();
 						
 						// record the event
-						var movedItem = GridEventItem.Create(nodeLeft, 0, node.index);
+						var movedItem = GridEventItem.Create(nodeLeft, 0, node.Index);
 						movedItems.Add(movedItem);
 						continue;
 					}
@@ -322,11 +341,11 @@ namespace Glazman.Shapeshift
 					var nodeRight = TryGetGridNodeState(x + 1, y - 1);
 					if (nodeRight?.IsEmpty() == true)
 					{
-						nodeRight.itemType = node.itemType;
-						node.itemType = -1;
+						nodeRight.SetItemId(node.ItemId);
+						node.RemoveItem();
 						
 						// record the event
-						var movedItem = GridEventItem.Create(nodeRight, 0, node.index);
+						var movedItem = GridEventItem.Create(nodeRight, 0, node.Index);
 						movedItems.Add(movedItem);
 						continue;
 					}
@@ -352,8 +371,10 @@ namespace Glazman.Shapeshift
 			{
 				// create randomized items at each empty node in the top row
 				var node = Grid[x, yTop];
-				if (node.IsEmpty() && node.TryRandomizeItemType(Config.maxItemTypes))
+				if (node.GridNodeConfig.IsOpen && node.IsEmpty())
 				{
+					node.SetItemId(GridItemDrops.Next());
+					
 					// record the event
 					createdItems.Add(node);
 				}
@@ -396,12 +417,12 @@ namespace Glazman.Shapeshift
 				var node2 = filledNodes[randomIndex];
 
 				// swap
-				var node2Type = node2.itemType;
-				node2.itemType = node1.itemType;
-				node1.itemType = node2Type;
+				var temp = node2.ItemId;
+				node2.SetItemId(node1.ItemId);
+				node1.SetItemId(temp);
 				
 				// record the event
-				var swappedItem = GridEventItem.Create(node1, 0, node2.index);
+				var swappedItem = GridEventItem.Create(node1, 0, node2.Index);
 				swappedItems.Add(swappedItem);
 			}
 

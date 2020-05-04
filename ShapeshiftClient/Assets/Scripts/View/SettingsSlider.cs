@@ -9,7 +9,7 @@ namespace Glazman.Shapeshift
 {
 	public class SettingsSlider : SettingsWidget
 	{
-		[SerializeField] private Slider _slider;
+		[SerializeField] private Slider _slider = null;
 
 		protected override void Refresh()
 		{

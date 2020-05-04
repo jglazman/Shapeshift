@@ -16,7 +16,7 @@ namespace Glazman.Shapeshift
 	
 	public class WorldMapView : MonoBehaviour, ISceneTransitioner
 	{
-		[SerializeField] private ScrollRect _scrollRect;
+		[SerializeField] private ScrollRect _scrollRect = null;
 
 		
 		private void Awake()

@@ -7,14 +7,6 @@ using UnityEngine;
 
 namespace Glazman.Shapeshift
 {
-	// WARNING: these are serialized properties. do not change their values.
-	public enum GridNodeType
-	{
-		Undefined = 0,
-		Closed = 1,
-		Open = 2
-	}
-
 	/// <summary>The coordinates of a grid node.</summary>
 	[Serializable]
 	public struct GridIndex
@@ -42,7 +34,7 @@ namespace Glazman.Shapeshift
 	{
 		public GridIndex? ReferenceIndex { get; protected set; }
 		public GridIndex Index { get; protected set; }
-		public int ItemType { get; protected set; }
+		public string ItemId { get; protected set; }
 		public int Points { get; protected set; }
 
 		public static GridEventItem Create(GridNodeState nodeState, int points=0, GridIndex? refIndex=null)
@@ -50,8 +42,8 @@ namespace Glazman.Shapeshift
 			var item = new GridEventItem()
 			{
 				ReferenceIndex = refIndex,
-				Index = nodeState.index,
-				ItemType = nodeState.itemType,
+				Index = nodeState.Index,
+				ItemId = nodeState.ItemId,
 				Points = points
 			};
 			return item;
@@ -62,63 +54,45 @@ namespace Glazman.Shapeshift
 	[Serializable]
 	public struct GridNodeLayout
 	{
-		public GridNodeType nodeType;
-		public int itemType;	// -1 = closed, 0 = random
+		public string nodeId;
+		public string itemId;
 	}
 
 	/// <summary>The mutable state of a grid node.</summary>
 	public class GridNodeState
 	{
-		public GridIndex index { get; }
-		
-		public GridNodeType nodeType;
-		public int itemType;
+		public GridIndex Index { get; }
+		public string NodeId { get; }
+		public string ItemId { get; private set;  }
 
-		private GridNodeState(int x, int y)
+		public GridNodeConfig GridNodeConfig => GameConfig.GetGridNode(NodeId);
+		public GridItemConfig? GridItemConfig => !string.IsNullOrEmpty(ItemId) ? (GridItemConfig?)GameConfig.GetGridItem(ItemId) : null;
+
+		public GridNodeState(int x, int y, string nodeId, string itemId)
 		{
-			index = new GridIndex() { x = x, y = y };
+			Index = new GridIndex() { x = x, y = y };
+			NodeId = nodeId;
+			ItemId = itemId;
 		}
 
 		public bool IsEmpty()
 		{
-			return nodeType == GridNodeType.Open && itemType <= 0;
+			return GridNodeConfig.IsOpen && ItemId == null;
 		}
 
 		public bool IsFilled()
 		{
-			return nodeType == GridNodeType.Open && itemType > 0;
+			return GridNodeConfig.IsOpen && ItemId != null;
 		}
 
-		public bool TryRandomizeItemType(int maxItemTypes)
+		public void RemoveItem()
 		{
-			if (nodeType == GridNodeType.Open)
-			{
-				itemType = GetRandomItemType(maxItemTypes);
-				return true;
-			}
-
-			return false;
+			ItemId = null;
 		}
 
-		public static GridNodeState CreateFromLayout(int x, int y, GridNodeLayout nodeLayout, int maxItemTypes)
+		public void SetItemId(string itemId)
 		{
-			var itemState = new GridNodeState(x, y)
-			{
-				nodeType = nodeLayout.nodeType
-			};
-
-			// choose the initial item state
-			if (nodeLayout.itemType == 0)
-				itemState.itemType = GetRandomItemType(maxItemTypes);
-			else
-				itemState.itemType = nodeLayout.itemType;
-
-			return itemState;
-		}
-		
-		private static int GetRandomItemType(int maxItemTypes)
-		{
-			return UnityEngine.Random.Range(1, Mathf.Min(maxItemTypes + 1, GridItemView.NumItemTypes));
+			ItemId = itemId;
 		}
 	}
 }

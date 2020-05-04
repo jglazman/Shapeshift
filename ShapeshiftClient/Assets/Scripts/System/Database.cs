@@ -105,8 +105,7 @@ namespace Glazman.Shapeshift
 				{
 					data.Value = default;
 
-					var defaultValue = data.Value as IDefaultData;
-					if (defaultValue != null)
+					if (data.Value is IDefaultData defaultValue)
 					{
 						defaultValue.Reset(ident);
 						data.Value = (T)defaultValue;

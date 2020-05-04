@@ -5,6 +5,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Networking;
@@ -33,7 +34,8 @@ namespace Glazman.Shapeshift
 		public int height;
 		public GridNodeLayout[] layout;  // Unity can't serialize a multidimensional array, so let's emulate one
 
-		public int maxItemTypes;
+		public string category;
+		public string[] excludeItemIds;
 		
 		public LevelGoalType goalType;
 		public int goal1;
@@ -74,7 +76,7 @@ namespace Glazman.Shapeshift
 
 		public void SetNodeLayout(int x, int y, GridNodeLayout nodeLayout)
 		{
-			Assert.IsTrue(IsInBounds(x, y), $"Tried to set out-of-bounds node type: ({x},{y})={nodeLayout.nodeType}:{nodeLayout.itemType}");
+			Assert.IsTrue(IsInBounds(x, y), $"Tried to set out-of-bounds node type: ({x},{y})={nodeLayout.nodeId}:{nodeLayout.itemId}");
 
 			layout[GetLinearIndex(x, y)] = nodeLayout;
 		}
@@ -97,18 +99,21 @@ namespace Glazman.Shapeshift
 				width = width,
 				height = height,
 				layout = new GridNodeLayout[width * height],
-				maxItemTypes = GridItemView.NumItemTypes - 1,
+				category = GameConfig.GetAllGridItemCategories().First(),
+				excludeItemIds = new string[]{},
 				goalType = LevelGoalType.Points,
-				goal1 = 1000,
-				goal2 = 3000,
+				goal1 = 3000,
+				goal2 = 7000,
 				goal3 = 10000,
 				challengeType = LevelChallengeType.Moves,
 				challengeValue = 10
 			};
 
+			var defaultGridItem = GameConfig.GetDefaultLayoutGridItem(config.category);
+			var openNode = GameConfig.AllGridNodes.First(node => node.IsOpen);
 			for (int y = 0; y < config.height; y++)
 				for (int x = 0; x < config.width; x++)
-					config.SetNodeLayout(x, y, new GridNodeLayout() { nodeType=GridNodeType.Open, itemType=0 });
+					config.SetNodeLayout(x, y, new GridNodeLayout() { nodeId=openNode.ID, itemId=defaultGridItem.ID });
 
 			return config;
 		}
@@ -116,14 +121,16 @@ namespace Glazman.Shapeshift
 		public static void ResizeLevel(int width, int height, ref LevelConfig config)
 		{
 			var resizedLayout = new GridNodeLayout[width * height];
-			
+
+			var defaultGridItem = GameConfig.GetDefaultLayoutGridItem(config.category);
+			var openNode = GameConfig.AllGridNodes.First(node => node.IsOpen);
 			for (int y = 0; y < height; y++)
 				for (int x = 0; x < width; x++)
 				{
 					if (config.IsInBounds(x, y))
 						resizedLayout[GetLinearIndex(x, y, width)] = config.GetNodeLayout(x, y);
 					else
-						resizedLayout[GetLinearIndex(x, y, width)] = new GridNodeLayout() { nodeType=GridNodeType.Open, itemType=0 };
+						resizedLayout[GetLinearIndex(x, y, width)] = new GridNodeLayout() { nodeId=openNode.ID, itemId=defaultGridItem.ID };
 				}
 
 			config.width = width;

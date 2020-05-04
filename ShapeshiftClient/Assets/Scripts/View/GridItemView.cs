@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Jeremy Glazman
 //
 
+using TMPro;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -12,18 +13,17 @@ namespace Glazman.Shapeshift
 		// TODO: this should be data-driven
 		private static readonly int MoveActionTweenId = TweenConfig.ConvertGuidToId("EaseIn");
 		
-		// TODO: this should be data-driven
-		public static int NumItemTypes => 6;
-
-		public int ItemType => this.Type;
-
-		public bool IsBusy => _tween != null && !_tween.IsDone;
+		[SerializeField] private TextMeshProUGUI _tileText = null;
 
 		private TweenObject _tween = null;
+
+		public bool IsBusy => _tween != null && !_tween.IsDone;
+		
+		public GridItemConfig GridItemConfig => GameConfig.GetGridItem(ID);
 		
 		protected override string GetSpriteResourceName()
 		{
-			return $"GridItem-{ItemType}";
+			return GridItemConfig.ImageName;
 		}
 
 		public override void Invalidate()
@@ -37,10 +37,27 @@ namespace Glazman.Shapeshift
 			base.Invalidate();
 		}
 
-
-		public void DoCreateAction(int itemType, float speed)
+		protected override void SetId(string id, bool andEnable = false)
 		{
-			SetType(itemType, true);
+			base.SetId(id, andEnable);
+
+			// HACK: show letters dynamically so we don't have to generate all 26 tiles
+			if (!string.IsNullOrEmpty(id) && GridItemConfig.MatchIndex >= 65)
+			{
+				_tileText.text = $"{(char)GridItemConfig.MatchIndex}";
+				_tileText.gameObject.SetActive(true);
+			}
+			else
+			{
+				_tileText.gameObject.SetActive(false);
+				_tileText.text = null;
+			}
+		}
+
+
+		public void DoCreateAction(string itemId, float speed)
+		{
+			SetId(itemId, true);
 
 			// TODO: FX when the item is created. for now just spawn it above the top of the board.
 			var endPos = transform.localPosition;
